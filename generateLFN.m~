@@ -51,13 +51,10 @@ function [ T, G, F ] = generateLFN()
             G{p,q} = sampleCat(theta, M,1);
         end
     end
-    
     for p=1:N
         for q=1:N
-            D{p,q} = zeros(M,1);
             for m=1:M
-                D{p,q}(m) = rand(1,1)<= Bern(G{p,q}(m), G{p,q}(m)); % bernoulli parameter, M(p)x1
-            end
+                D{p,q}(m) = rand(M,1)<= Bern(G{p,q}, G{p,q}); % bernoulli parameter, M(p)x1
         end
     end
 
@@ -78,7 +75,7 @@ function [ T, G, F ] = generateLFN()
         for q=1:N
             mG{p,q} = zeros(K,1);
             for k=1:K
-                mG{p,q}(k) = sum(G{p,q}==k);
+                mG{p,q}(k) = sum(mG{p,q}==k);
             end
             mG{p,q} = mG{p,q}/sum(mG{p,q});
         end
@@ -86,11 +83,9 @@ function [ T, G, F ] = generateLFN()
 
     for p=1:N
         for q=1:N
-            F(p,q) = rand(1,1)<1/(1+exp(mT(p,:)*Phi*mG{p,q}));
-            %F(p,q) = mT(p,:)*Phi*mG{p,q};
+            F(p,q) = rand(1,1)<mT(p,:)*Phi*mT{p,q};
         end
     end
-%    keyboard
     % average grouping weight of one pair
 end
 
