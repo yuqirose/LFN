@@ -1,0 +1,14 @@
+function [ prob ] = topic_posterior( n, c, Wnc, hyper )
+%TOPIC_POSTERIOR Summary of this function goes here
+%   Detailed explanation goes here
+K = hyper.K;
+prob = zeros(1,K);
+
+for k = 1: K
+   follow = 1/
+   Theta(n,k)*Beta(k,Wnc)
+    
+end
+
+end
+

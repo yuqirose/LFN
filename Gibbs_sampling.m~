@@ -1,0 +1,76 @@
+% function [ LFN ] = Gibbs_sampling(data,  hyper )
+%GIBBS_SAMPLING Summary of this function goes here
+%   Detailed explanation goes her
+
+load('fake_data.mat');
+%% intialization
+K = hyper.K; % topic/group number
+N = hyper.N; % graph size
+V = hyper.V; % dictionary length
+
+W = data.W; % word counts
+F = data.F;
+D = data.D;
+
+
+%% params
+Theta = ones(N, K)*(1/K);
+Beta = ones(K,V)*(1/V);
+Phi =  diagonal(ones(K,1));
+B = diagonal(ones(K,1));
+
+%% latent variables
+T = cell(N,1);
+G = cell(N,N);
+
+%% topic/link count
+T_count = zeros(N,K);
+G_count = zeros(N,K);
+
+%% randomly assign labels
+[T,G] = randomLFN(Theta,Beta, Phi, B);
+
+
+MaxIter = 100;
+MaxSubIter = 50;
+for iter = 1:MaxIter
+    for subiter = 1:MaxSubIter
+    % Sample T 
+        for n = 1:N
+            C = numel(W{n}); % total words
+            for c = 1:C
+                 Tnc_old = T{n}(c);
+                 T_count(n,Tnc_old) = T_count(n,Tnc_old) -1;
+                 prob_T = topic_posterior();
+                 Tnc_new = find(mnrnd(prob_T,1)==1);
+                 T{n}(c) = Tnc_new;
+                 T_count(n,Tnc_new) = T_count(n,Tnc_new)+1;
+
+            end
+
+            % Sample G
+            M = numel(G{n}); % total links
+            for m = 1:M
+                 Gnm_old = G{n}(m);
+                 G_count(n,Gnm_old) = G_count(n,Gnm_old) -1;
+                 prob_G = group_posterior();
+                 Gnm_new = find(mnrnd(prob_G,1)==1);
+                 G{n}(m) = Gnm_new;
+                 G_count(n,Gnm_new) = G_count(n,Gnm_new)+1;
+
+            end
+            
+            % 
+
+        end
+           
+    
+    end
+    
+    
+    
+end
+
+% end
+
+
