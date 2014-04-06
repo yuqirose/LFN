@@ -11,7 +11,7 @@ function [ T, G, F ] = generateLFN()
 %   Bern: KxK
     N = 100;
     V = 500;
-    K = 20;
+    K = 5;
 
     Theta = rand(K,N); % can consider using Dirichlet r.v. instead
     Theta = bsxfun(@rdivide, Theta, sum(Theta));
@@ -92,6 +92,8 @@ function [ T, G, F ] = generateLFN()
     end
 %    keyboard
     % average grouping weight of one pair
+    
+    save('fake_data.mat');
 end
 
 function X = sampleCat(theta, m, n)
