@@ -15,10 +15,10 @@ function [ T, G, F ] = generateLFN()
 
     Theta = rand(K,N); % can consider using Dirichlet r.v. instead
     Theta = bsxfun(@rdivide, Theta, sum(Theta));
-    beta = rand(K,V);
-    beta = bsxfun(@rdivide, beta, sum(beta,2));
+    Beta = rand(K,V);
+    Beta = bsxfun(@rdivide, Beta, sum(Beta,2));
     Phi = randn(K,K);
-    Bern = rand(K,K); % each element is one parameter of Bernoulli dist.
+    B = rand(K,K); % each element is one parameter of Bernoulli dist.
 
 % setp 2. sample the 1) topics, 2) words, 3) group connection, 4) dialog and 5) following-relations
     
@@ -33,7 +33,7 @@ function [ T, G, F ] = generateLFN()
         for k=1:K
             idx = find(T{n}==k);
             if(~isempty(idx))
-                W{n}(idx) = sampleCat(beta(k,:)', length(idx), 1);
+                W{n}(idx) = sampleCat(Beta(k,:)', length(idx), 1);
             end
         end
     end
@@ -56,7 +56,7 @@ function [ T, G, F ] = generateLFN()
         for q=1:N
             D{p,q} = zeros(M,1);
             for m=1:M
-                D{p,q}(m) = rand(1,1)<= Bern(G{p,q}(m), G{p,q}(m)); % bernoulli parameter, M(p)x1
+                D{p,q}(m) = rand(1,1)<= B(G{p,q}(m), G{p,q}(m)); % bernoulli parameter, M(p)x1
             end
         end
     end
@@ -93,20 +93,8 @@ function [ T, G, F ] = generateLFN()
 %    keyboard
     % average grouping weight of one pair
     
-    save('fake_data.mat');
-end
+    Theta = Theta';
+%    save('fake_data.mat',);
+end  
 
-function X = sampleCat(theta, m, n)
-% sample multinomial (categorical) random variables of size [mxn]
-    N = m*n;
-    K = length(theta);
-    count = mnrnd(N,theta,1); 
-    % a rown vector indicating number of examples from each group
-    count = cumsum([0 count]);
-    X = zeros(N,1);
-    for k=1:K
-        X(count(k)+1:count(k+1)) = X(count(k)+1:count(k+1))+k;
-    end
-    X = X(randperm(length(X)));
-    X = reshape(X,[m,n]);
-end
+

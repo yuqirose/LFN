@@ -1,0 +1,12 @@
+% read W file and output the 
+N = 102;
+W = cell(1,N );
+fid = fopen('W_N=102.txt');
+
+tline = fgets(fid);
+while ~feof(fid)
+    line = fgets(fid); %# read line by line
+    C = text
+end
+
+fclose(fid);
