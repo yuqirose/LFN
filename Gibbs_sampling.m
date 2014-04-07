@@ -17,11 +17,18 @@ F = data.F;
 D = data.D;
 
 
+params_org = params;
+
 %% params
 Theta = ones(N, K)*(1/K);
 Beta = ones(K,V)*(1/V);
 Phi =  diag(ones(K,1));
-B = diag(ones(K,1));
+B = diag(ones(K,1)*0.9) +0.1*ones(K,K);
+
+params.Theta = Theta;
+params.Beta = Beta;
+params.Phi = Phi;
+params.B = B;
 
 %% latent variables
 % T = cell(1,N);
