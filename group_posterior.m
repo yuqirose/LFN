@@ -17,11 +17,11 @@ for k = 1:K
    
    topic_prob= topic_cnt_p/sum(topic_cnt_p);
 
-   tmp = 1/(1+exp(topic_prob*Phi*group_prob'));
+   tmp = 1/(1+exp(topic_prob*Phi*group_prob));
    link_prob  = B(k,Gqpm)^Dpqm+B(k,Gqpm)^(1-Dpqm);
    prob(k) = (Theta(p,k)+ Theta(q,k))/2*link_prob*tmp;
 end
-prob(k)/sum(prob); 
+prob = prob /sum(prob); 
 
 end
 

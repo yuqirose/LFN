@@ -17,26 +17,28 @@ for p = 1:N
     % topics
     C = numel(W{p});
     for c= 1:C
-        Tpc = T{p};
+        Tpc = T{p}(c);
         Wpc = W{p}(c); 
         loglike = loglike + log(Theta(p,Tpc))+ log(Beta(Tpc,Wpc));
     end
     % groups
-    for m = 1:M
-         for q = 1:N
-        
+
+     for q = 1:N
+         for m = 1:M
+            Dpqm = D{p,q}(m);
             Gpqm = G{p,q}(m);
             Gqpm = G{q,p}(m);
             f1 = (Theta(p,Gpqm)+Theta(q,Gpqm))/2;
-            loglike = loglike + Gpqm*log(f1) + (1-Gpqm) *log(1-f1);
+            loglike = loglike + Dpqm*log(f1) + (1-Dpqm) *log(1-f1);
             loglike = loglike + log(B(Gpqm, Gqpm));
-        end
+         end
     end
+    
     % follow , calculate average
-    Tavg = mean(T{p});
+    Tavg = histc(T{p},[1:K])/sum(histc(T{p},[1:K]));
     for q = 1:N
         Fpq = F(p,q);
-        Gavg = mean(G{p,q});
+        Gavg = histc(G{p,q},[1:K])/sum(histc(G{p,q},[1:K]));
         f2 = 1/(1+exp(Tavg'*Phi*Gavg));
         loglike = loglike + Fpq*log(f2) +(1-Fpq)*log(1-f2);
     end

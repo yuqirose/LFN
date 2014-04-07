@@ -18,70 +18,89 @@ D = data.D;
 
 
 %% params
-% Theta = ones(N, K)*(1/K);
-% Beta = ones(K,V)*(1/V);
-% Phi =  diag(ones(K,1));
-% B = diag(ones(K,1));
+Theta = ones(N, K)*(1/K);
+Beta = ones(K,V)*(1/V);
+Phi =  diag(ones(K,1));
+B = diag(ones(K,1));
 
 %% latent variables
 T = cell(1,N);
 G = cell(N,N);
+T = data.T;
+G = data.G;
+
 
 %% topic/link count
 T_count = zeros(N,K);
-G_count = zeros(N,K);
+G_count = zeros(N,N,K);
 
+for p = 1:N
+    T_p = T{p};
+    C = numel(T_p); % total words
+    for c = 1:C
+        T_count(p,T_p(c)) = T_count(p,T_p(c))+1;
+    end
+    for q = 1:N
+        G_pq = G{p,q};
+        for m = 1:M
+            G_count (p,q,G_pq(m)) =G_count (p,q,G_pq(m))+1;
+        end
+    end
+end
+       
 %% randomly assign labels
 % [T,G] = generateLFN(Theta,Beta, Phi, B);
 
-
 MaxIter = 100;
 MaxSubIter = 50;
-LogLike = loglike_LFN ();
+LogLike = loglike_LFN (W,F,D,T,G,params,hyper);
 for iter = 1:MaxIter
     for subiter = 1:MaxSubIter
-        
-    % Sample T 
+        % Sample T 
         for p = 1:N
             C = numel(W{p}); % total words
             for c = 1:C
                  Tpc_old = T{p}(c);
-                 T_count(n,Tpc_old) = T_count(n,Tpc_old) -1;
+                 T_count(p,Tpc_old) = T_count(p,Tpc_old) -1;
                  % TBD: process with bows
                  Wpc = W{p}(c);
-                 prob_T = topic_posterior(p, Wpc, topic_cnt_p, group_cnt_p, params,hyper );
-                 Tpc_new = find(mnrnd(prob_T,1)==1);
+                 Gp_count = squeeze(sum(G_count(p,:,:),2));
+                 prob_T = topic_posterior(p, Wpc, T_count(p,:), Gp_count, params,hyper );
+                 Tpc_new = find(mnrnd(1, prob_T)==1);
                  T{p}(c) = Tpc_new;
-                 T_count(n,Tpc_new) = T_count(n,Tpc_new)+1;
+                 T_count(p,Tpc_new) = T_count(p,Tpc_new)+1;
 
             end
 
             % Sample G
             for q = 1:N
                 for m = 1:M
-                     Gpm_old = G{p}(m);
-                     G_count(n,Gpm_old) = G_count(n,Gpm_old) -1;
+                     Gpqm_old = G{p,q}(m);
+                     G_count(p,Gpqm_old) = G_count(p,Gpqm_old) -1;
                      % TBD:process with networks
-                     prob_G = group_posterior( p,q, Dpqm, Gqpm, topic_cnt_p,group_cnt_p, params,hyper);
-                     Gpm_new = find(mnrnd(prob_G,1)==1);
-                     G{p}(m) = Gpm_new;
-                     G_count(n,Gpm_new) = G_count(n,Gpm_new)+1;
+                     Dpqm = D{p,q}(m);
+                     Gpq_count = squeeze(G_count(p,q,:));
+                     prob_G = group_posterior( p,q, Dpqm, Gpqm_old, T_count(p,:),Gpq_count, params,hyper);
+                     Gpqm_new = find(mnrnd(1,prob_G)==1);
+                     G{p,q}(m) = Gpqm_new;
+                     G_count(p,Gpqm_new) = G_count(p,Gpqm_new)+1;
 
                 end
             end
-            
-            % Check convergence
-             LogLike_new = loglike_LFN();
-             if(abs(LogLike_new-LogLike) < thres )
-                 break;
-             end
 
+        fprintf('%d ',p);
         end
-           
-    
+        
+                    
+        % Check convergence
+        LogLike_new = loglike_LFN(W,F,D,T,G,params,hyper);
+        if(abs(LogLike_new-LogLike) < thres )
+           break;
+        end
     end
     
-    
+    % Update parameters
+      params = update_params_LFN(params,T_count, G_count);
     
 end
 

@@ -15,13 +15,13 @@ for k = 1: K
    topic_cnt(k) = topic_cnt(k)+1;
    topic_prob= topic_cnt/sum(topic_cnt);
  
-   group_cnt_p= group_cnt_p/sum(group_cnt_p);
+   group_prob= group_cnt_p/sum(group_cnt_p);
 
    
-   tmp = 1/(1+exp(topic_prob*Phi*group_prob'));
+   tmp = 1/(1+exp(topic_prob*Phi*group_prob));
    prob(k) =  Theta(p,k)*Beta(k,Wpc) * tmp;  
 end
 
-prob(k)/sum(prob);
+prob = prob./sum(prob);
 end
 
