@@ -24,13 +24,21 @@ Phi =  diag(ones(K,1));
 B = diag(ones(K,1));
 
 %% latent variables
-T = cell(1,N);
-G = cell(N,N);
-T = data.T;
-G = data.G;
+% T = cell(1,N);
+% G = cell(N,N);
+% T = data.T;
+% G = data.G;
 
+
+
+%% randomly assign labels
+
+[ T, G] = Rnd_generateLFN(W, D, K,M);
+% [T,G] = generateLFN(Theta,Beta, Phi, B);
 
 %% topic/link count
+       
+
 T_count = zeros(N,K);
 G_count = zeros(N,N,K);
 
@@ -47,9 +55,7 @@ for p = 1:N
         end
     end
 end
-       
-%% randomly assign labels
-% [T,G] = generateLFN(Theta,Beta, Phi, B);
+%%
 
 MaxIter = 100;
 MaxSubIter = 50;
@@ -71,19 +77,22 @@ for iter = 1:MaxIter
                  T_count(p,Tpc_new) = T_count(p,Tpc_new)+1;
 
             end
-
+            
             % Sample G
             for q = 1:N
                 for m = 1:M
                      Gpqm_old = G{p,q}(m);
-                     G_count(p,Gpqm_old) = G_count(p,Gpqm_old) -1;
+                     
+                     G_count(p,q,Gpqm_old) = G_count(p,q,Gpqm_old) -1;
+                     
                      % TBD:process with networks
                      Dpqm = D{p,q}(m);
                      Gpq_count = squeeze(G_count(p,q,:));
+                     
                      prob_G = group_posterior( p,q, Dpqm, Gpqm_old, T_count(p,:),Gpq_count, params,hyper);
                      Gpqm_new = find(mnrnd(1,prob_G)==1);
                      G{p,q}(m) = Gpqm_new;
-                     G_count(p,Gpqm_new) = G_count(p,Gpqm_new)+1;
+                     G_count(p,q, Gpqm_new) = G_count(p,q, Gpqm_new)+1;
 
                 end
             end
@@ -97,6 +106,7 @@ for iter = 1:MaxIter
         if(abs(LogLike_new-LogLike) < thres )
            break;
         end
+        disp(LogLike_new);
     end
     
     % Update parameters

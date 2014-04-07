@@ -9,7 +9,7 @@ function [ T, G, F ] = generateLFN()
 %   beta: KxV
 %   Phi: KxK
 %   Bern: KxK
-    N = 100;
+    N = 20;
     V = 500;
     K = 5;
 
@@ -93,8 +93,24 @@ function [ T, G, F ] = generateLFN()
 %    keyboard
     % average grouping weight of one pair
     
-    Theta = Theta';
-%    save('fake_data.mat',);
+   Theta = Theta';
+   params.Theta = Theta;
+   params.Beta = Beta;
+   params.Phi = Phi;
+   params.B = B;
+   
+   hyper.K = K; % topic/group number
+   hyper.N= N; % graph size
+   hyper.V =V; % dictionary length
+   hyper.M = M;
+
+   data.W= W; % word counts
+   data.F =F;
+   data.D =D;
+   data.G = G;
+   data.T = T;
+    
+  save('fake_data.mat','params','data','hyper');
 end  
 
 
