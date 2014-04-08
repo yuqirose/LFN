@@ -66,7 +66,7 @@ end
 
 MaxIter = 100;
 MaxSubIter = 50;
-LogLike = loglike_LFN (W,F,D,T,G,params,hyper);
+[LogLike, LogLike1, LogLkie2, LogLike3] = loglike_LFN3 (W,F,D,T,G,params,hyper);
 for iter = 1:MaxIter
     for subiter = 1:MaxSubIter
         % Sample T 
@@ -85,7 +85,7 @@ for iter = 1:MaxIter
 
             end
         end
-        keyboard
+        
         for p=1:N
             % Sample G
             for q = p+1:N
@@ -101,7 +101,7 @@ for iter = 1:MaxIter
                     % TBD:process with networks
                     Gpq_count = squeeze(G_count(p,q,:));
                     
-                    prob_G = group_posterior3( p,q, Dpqm, Dqpm, Gqpm_old, T_count(p,:),Gpq_count, params,hyper);
+                    prob_G = group_posterior3( p,q, Dpqm, Dqpm, Gqpm_old, F(p,q), T_count(p,:), Gpq_count, params,hyper);
                     [a,b] = max(prob_G);
                     Gpqm_new = b;
                     %Gpqm_new = find(mnrnd(1,prob_G)==1);
@@ -117,7 +117,7 @@ for iter = 1:MaxIter
                     
                     Gqp_count = squeeze(G_count(q,p,:));
                      
-                    prob_G = group_posterior3( q,p, Dqpm, Dpqm, Gpqm_old, T_count(q,:),Gqp_count, params,hyper);
+                    prob_G = group_posterior3( q,p, Dqpm, Dpqm, Gpqm_old, F(q,p), T_count(q,:), Gqp_count, params,hyper);
                     [a,b] = max(prob_G);
                     Gqpm_new = b;
                     %Gqpm_new = find(mnrnd(1,prob_G)==1);
@@ -130,6 +130,7 @@ for iter = 1:MaxIter
             fprintf('%d ',p);
         end
         
+        keyboard
                     
         % Check convergence
         [LogLike_new, loglike_new1, loglike_new2, loglike_new3] = loglike_LFN3(W,F,D,T,G,params,hyper);
@@ -139,7 +140,7 @@ for iter = 1:MaxIter
         disp(num2str([LogLike_new loglike_new1 loglike_new2 loglike_new3]));
     end
 
-    keyboard
+    
 
     % Update parameters
       params = update_params_LFN(params,T_count, G_count);
