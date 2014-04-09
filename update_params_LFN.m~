@@ -9,7 +9,6 @@ B = params.B;
 
 % update Theta
 [N,K] = size(Tp_count);
-M = length(G{1,1});
 for p = 1:N
     Theta(p,: ) = Tp_count(p,:)/sum(Tp_count(p,:));
 end
@@ -47,10 +46,10 @@ denom_Phi = zeros(K,K);
 for p = 1:N
     for q = 1:N
            if q~=p
-            tmp1 = Tp_count(p,:)/sum(Tp_count(p,:));
-            tmp2 = squeeze(G_count(p,q,:)/sum( G_count(p,q,:)));
-            numer_Phi = numer_Phi + F(p,q).* tmp1*tmp2;
-            denom_Phi = denom_Phi + tmp1*tmp2; 
+             = T_count(p,:)/
+            j = G{q,p}(m);
+            numer_Phi(i,j) = numer_Phi(i,j)+ 1*F(p,q);
+            denom_Phi (i,j) = denom_Phi(i,j) +1; 
            end
     end
 end

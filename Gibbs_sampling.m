@@ -46,14 +46,17 @@ params.B = B;
 %% topic/link count
        
 
-T_count = zeros(N,K);
+Tp_count = zeros(N,K);
+Tw_count = zeros(K,V);
 G_count = zeros(N,N,K);
 
 for p = 1:N
     T_p = T{p};
     C = numel(T_p); % total words
     for c = 1:C
-        T_count(p,T_p(c)) = T_count(p,T_p(c))+1;
+        Tp_count(p,T_p(c)) = Tp_count(p,T_p(c))+1;
+        Wpc = W{p}(c);
+        Tw_count(T_p(c),Wpc) = Tw_count(T_p(c),Wpc) +1;
     end
     for q = 1:N
         G_pq = G{p,q};
@@ -65,8 +68,8 @@ end
 %%
 
 MaxIter = 100;
-MaxSubIter = 50;
-[LogLike, LogLike1, LogLkie2, LogLike3] = loglike_LFN3 (W,F,D,T,G,params,hyper);
+MaxSubIter = 1;
+[LogLike, LogLike1, LogLkie2, LogLike3] = loglike_LFN(W,F,D,T,G,params,hyper);
 for iter = 1:MaxIter
     for subiter = 1:MaxSubIter
         % Sample T 
@@ -74,15 +77,19 @@ for iter = 1:MaxIter
             C = numel(W{p}); % total words
             for c = 1:C
                  Tpc_old = T{p}(c);
-                 T_count(p,Tpc_old) = T_count(p,Tpc_old) -1;
+                 Tp_count(p,Tpc_old) = Tp_count(p,Tpc_old) -1;
+                 
                  % TBD: process with bows
                  Wpc = W{p}(c);
+                 Tw_count(Tpc_old,Wpc) = Tw_count(Tpc_old,Wpc) -1;
                  % G_count: NxNxK tensor
                  Gp_count = squeeze(G_count(p,:,:));
-                 prob_T = topic_posterior(p, Wpc, T_count(p,:), Gp_count, F, params, hyper);
+                 prob_T = topic_posterior(p, Wpc, Tp_count(p,:), Gp_count, F, params, hyper);
                  Tpc_new = find(mnrnd(1, prob_T)==1);
                  T{p}(c) = Tpc_new;
-                 T_count(p,Tpc_new) = T_count(p,Tpc_new)+1;
+                 Tp_count(p,Tpc_new) = Tp_count(p,Tpc_new)+1;
+                 Tw_count(Tpc_new,Wpc) = Tw_count(Tpc_new,Wpc) + 1;
+
             end
             if(rem(p,5)==0)
                 fprintf('%d ',p);
@@ -104,7 +111,7 @@ for iter = 1:MaxIter
                     % TBD:process with networks
                     Gpq_count = squeeze(G_count(p,q,:));
                     
-                    prob_G = group_posterior( p,q, Dpqm, Dqpm, Gqpm_old, F(p,q), T_count(p,:), Gpq_count, params,hyper);
+                    prob_G = group_posterior( p,q, Dpqm, Dqpm, Gqpm_old, F(p,q), Tp_count(p,:), Gpq_count, params,hyper);
 %                     [a,b] = max(prob_G);
 %                     Gpqm_new = b;
                     Gpqm_new = find(mnrnd(1,prob_G)==1);
@@ -120,7 +127,7 @@ for iter = 1:MaxIter
                     
                     Gqp_count = squeeze(G_count(q,p,:));
                      
-                    prob_G = group_posterior( q,p, Dqpm, Dpqm, Gpqm_old, F(q,p), T_count(q,:), Gqp_count, params,hyper);
+                    prob_G = group_posterior( q,p, Dqpm, Dpqm, Gpqm_old, F(q,p), Tp_count(q,:), Gqp_count, params,hyper);
 %                     [a,b] = max(prob_G);
 %                     Gqpm_new = b;
                     Gqpm_new = find(mnrnd(1,prob_G)==1);
@@ -147,7 +154,7 @@ for iter = 1:MaxIter
     
 
     % Update parameters
-      params = update_params_LFN(params,T_count, G_count);
+      params = update_params_LFN(W,F,D,params,Tp_count,Tw_count, G_count, G);
 end
 
 % end
