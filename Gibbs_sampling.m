@@ -105,9 +105,9 @@ for iter = 1:MaxIter
                     Gpq_count = squeeze(G_count(p,q,:));
                     
                     prob_G = group_posterior( p,q, Dpqm, Dqpm, Gqpm_old, F(p,q), T_count(p,:), Gpq_count, params,hyper);
-                    [a,b] = max(prob_G);
-                    Gpqm_new = b;
-                    %Gpqm_new = find(mnrnd(1,prob_G)==1);
+%                     [a,b] = max(prob_G);
+%                     Gpqm_new = b;
+                    Gpqm_new = find(mnrnd(1,prob_G)==1);
                     G{p,q}(m) = Gpqm_new;
                     G_count(p,q, Gpqm_new) = G_count(p,q, Gpqm_new)+1;
 
@@ -121,9 +121,9 @@ for iter = 1:MaxIter
                     Gqp_count = squeeze(G_count(q,p,:));
                      
                     prob_G = group_posterior( q,p, Dqpm, Dpqm, Gpqm_old, F(q,p), T_count(q,:), Gqp_count, params,hyper);
-                    [a,b] = max(prob_G);
-                    Gqpm_new = b;
-                    %Gqpm_new = find(mnrnd(1,prob_G)==1);
+%                     [a,b] = max(prob_G);
+%                     Gqpm_new = b;
+                    Gqpm_new = find(mnrnd(1,prob_G)==1);
                     G{q,p}(m) = Gqpm_new;
                     G_count(q,p, Gqpm_new) = G_count(q, p, Gqpm_new)+1;
                     
