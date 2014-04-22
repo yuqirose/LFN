@@ -2,10 +2,8 @@ function [ params_new ] = update_params_LFN (W,F,D, params, Tp_count, Tw_count, 
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
 
-Theta= params.Theta;
-Phi = params.Phi;
-Beta = params.Beta;
-B = params.B;
+
+
 
 % update Theta
 [N,K] = size(Tp_count);
@@ -34,9 +32,9 @@ end
 
 B = numer_B./ denom_B;
 
-% update Theta
+% update Beta
 for k = 1:K
-    Tw_count(k,:) = Tw_count (k,:) /sum(Tw_count (k,:));
+    Beta(k,:) = Tw_count (k,:) /sum(Tw_count (k,:));
 end
 
 
@@ -56,7 +54,7 @@ for p = 1:N
 end
 
    
-
+Phi = numer_Phi ./ denom_Phi;
 
 
 params_new.Theta =Theta;
