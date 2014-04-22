@@ -34,3 +34,4 @@ data.D = mat2cell(D,ones(N,1),ones(N,1));
 
 %%
 [ LFN ] = Gibbs_sampling(data,  hyper );
+save('toy_rslt.mat','LFN','hyper');
