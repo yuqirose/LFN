@@ -146,7 +146,7 @@ for iter = 1:MaxIter
     
 
     % Update parameters
-      params = update_params_LFN(W,F,D,params,Tp_count,Tw_count, G_count, G);
+      params = update_params_LFN(F,D,params,Tp_count,Tw_count, G_count, G);
 end
 
 % end

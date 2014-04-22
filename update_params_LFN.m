@@ -1,4 +1,4 @@
-function [ params_new ] = update_params_LFN (W,F,D, params, Tp_count, Tw_count, G_count, G )
+function [ params_new ] = update_params_LFN (F,D, params, Tp_count, Tw_count, G_count, G )
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -33,12 +33,19 @@ function [ params_new ] = update_params_LFN (W,F,D, params, Tp_count, Tw_count, 
     Beta = bsxfun(@rdivide, Tw_count, sum(Tw_count,2));
 
     % 4. update Phi (bottom part)
-    % Tp_count: NxK matrix
-    % Tp_count(i,j): for user i, the number of words in topic j
+    % no analytical solution
+    % use numerical method
     numer_Phi = zeros(K,K);
     denom_Phi = zeros(K,K);
     Tp_weight = bsxfun(@rdivide, Tp_count, sum(Tp_count,2));
     G_weight = bsxfun(@rdivide, G_count, sum(G_count,3));
+
+    
+    Phi = params.Phi;
+    K = size(Phi,1);
+    Phi = Phi(:);
+    [Phi, negL] = minimize(Phi, @calcFTGPhi, 200, Tp_count, G_count, F);
+    Phi = reshape(Phi,[K,K]);
 
     % verify the bsxfun calculation --> 
     verif = 0;
@@ -76,4 +83,41 @@ function [ params_new ] = update_params_LFN (W,F,D, params, Tp_count, Tw_count, 
     params_new.B = B;
 
 
+end
+
+function [value, grad] = calcFTGPhi(Phi, Tp_count, G_count, F)
+
+    Tp_weight = bsxfun(@rdivide, Tp_count, sum(Tp_count,2));
+    G_weight = bsxfun(@rdivide, G_count, sum(G_count,3));
+    N = size(G_weight,1);
+    K = sqrt(length(Phi));
+    Phi = reshape(Phi,[K,K]);
+    % 4.1 do inference
+    pred = zeros(N,N);
+    for p=1:N
+        for q=p+1:N
+            pred(p,q) = trace(Phi*squeeze(G_weight(p,q,:))*Tp_weight(p,:));
+            pred(q,p) = trace(Phi*squeeze(G_weight(q,p,:))*Tp_weight(q,:));
+        end
+    end
+    % 4.2 calculate the gradient
+    grad = zeros(K,K);
+    for p=1:N
+        for q=p+1:N
+            grad = grad + squeeze(G_weight(p,q,:))*Tp_weight(p,:)*(F(p,q)-pred(p,q))/(pred(p,q)*(1-pred(p,q))+1e-32);
+            grad = grad + squeeze(G_weight(q,p,:))*Tp_weight(q,:)*(F(q,p)-pred(q,p))/(pred(q,p)*(1-pred(q,p))+1e-32);
+        end
+    end
+    % 4.3 calculate the value
+    value = 0;
+    for p=1:N
+        for q=p+1:N
+            value = value + F(p,q)*log(pred(p,q)+1e-32) + (1-F(p,q))*log(1-pred(p,q)+1e-32);
+            value = value + F(q,p)*log(pred(q,p)+1e-32) + (1-F(q,p))*log(1-pred(q,p)+1e-32);
+        end
+    end
+    grad = -grad(:);
+    value = -value;
+    % minimize instead of maximize
+%     keyboard
 end
