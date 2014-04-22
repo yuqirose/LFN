@@ -73,8 +73,8 @@ for p=1:N
         Fpq = F(p,q);
         Fqp = F(q,p);
         %Gavg = histc(G{p,q},[1:K])/sum(histc(G{p,q},[1:K]));
-        f3a = 1/(1+exp(Tavg{p}'*Phi*Gavg{p,q}));
-        f3b = 1/(1+exp(Tavg{q}'*Phi*Gavg{q,p}));
+        f3a = 1/(1+exp(Tavg{p}'*Phi*Gavg{p,q}'));
+        f3b = 1/(1+exp(Tavg{q}'*Phi*Gavg{q,p}'));
    
         loglike = loglike + Fpq*log(f3a) +(1-Fpq)*log(1-f3a);
         loglike = loglike + Fqp*log(f3b) +(1-Fqp)*log(1-f3b);

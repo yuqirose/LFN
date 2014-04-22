@@ -1,4 +1,4 @@
-% read W file and output the 
+% read W file and output the bag of word
 clear; clc;
 N = 102;
 W = cell(1,N );
@@ -15,6 +15,9 @@ while ~feof(fid)
         pair = textscan(words{i},'%d,%d');
         wordID = pair{1};
         wordcount = pair{2};
+        if(wordID==0)
+            continue;
+        end
         for c = 1:wordcount;
             Wp = [Wp,wordID];
         end
@@ -26,3 +29,9 @@ while ~feof(fid)
 end
 
 fclose(fid);
+
+%%
+F = load('F_N=102.txt');
+%%
+D = load('D_N=102.txt');
+save('toy_N=102.mat','W','F','D');

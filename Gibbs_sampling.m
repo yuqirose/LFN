@@ -1,10 +1,6 @@
-% function [ LFN ] = Gibbs_sampling(data,  hyper )
-%GIBBS_SAMPLING Summary of this function goes here
-%   Detailed explanation goes her
-clear; clc;
-
-load('fake_data.mat');
-
+function [ LFN ] = Gibbs_sampling(data,  hyper )
+ % GIBBS_SAMPLING : Gibbs sampling method for LFN model
+ % Direct implementation of Gibb sampling
 thres = 1e-3;
 %% intialization
 K = hyper.K; % topic/group number
@@ -15,9 +11,6 @@ M = hyper.M;
 W = data.W; % word counts
 F = data.F;
 D = data.D;
-
-
-params_org = params;
 
 %% params
 Theta = ones(N, K)*(1/K);
@@ -45,7 +38,6 @@ params.B = B;
 
 %% topic/link count
        
-
 Tp_count = zeros(N,K);
 Tw_count = zeros(K,V);
 G_count = zeros(N,N,K);
@@ -68,7 +60,7 @@ end
 %%
 
 MaxIter = 100;
-MaxSubIter = 1;
+MaxSubIter = 20;
 [LogLike, LogLike1, LogLkie2, LogLike3] = loglike_LFN(W,F,D,T,G,params,hyper);
 for iter = 1:MaxIter
     for subiter = 1:MaxSubIter
