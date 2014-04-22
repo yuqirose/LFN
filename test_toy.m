@@ -33,5 +33,6 @@ D = double(D>0);
 data.D = mat2cell(D,ones(N,1),ones(N,1));
 
 %%
+keyboard
 [ LFN ] = Gibbs_sampling(data,  hyper );
 save('toy_rslt.mat','LFN','hyper');
