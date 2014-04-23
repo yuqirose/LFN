@@ -10,20 +10,35 @@ function [ T, G, F ] = generateLFN()
 %   Phi: KxK
 %   Bern: KxK
     N = 20;
-    V = 500;
-    K = 5;
+%     V = 500;
+    V = 50;
+    K = 4;
+    
+    Theta(:,1:5) = repmat([1;0;0;0],[1,5]);
+    Theta(:,6:10) = repmat([0;1;0;0],[1,5]);
+    Theta(:,11:15) = repmat([0;0;1;0],[1,5]);
+    Theta(:,16:20) = repmat([0;0;0;1],[1,5]);
+    
+    Beta = 0.01*ones(K,V);
+    Beta(1,1) = 0.51;
+    Beta(2,2) = 0.51;
+    Beta(3,3) = 0.51;
+    Beta(4,4) = 0.51;
+    Phi = 0.1*ones(K,K) +diag(ones(K,1)*0.8);
+    B = Phi;
 
-    Theta = rand(K,N); % can consider using Dirichlet r.v. instead
-    Theta = bsxfun(@rdivide, Theta, sum(Theta));
-    Beta = rand(K,V);
-    Beta = bsxfun(@rdivide, Beta, sum(Beta,2));
-    Phi = randn(K,K);
-    B = rand(K,K); % each element is one parameter of Bernoulli dist.
+% 
+%     Theta = rand(K,N); % can consider using Dirichlet r.v. instead
+%     Theta = bsxfun(@rdivide, Theta, sum(Theta));
+%     Beta = rand(K,V);
+%     Beta = bsxfun(@rdivide, Beta, sum(Beta,2));
+%     Phi = randn(K,K);
+%     B = rand(K,K); % each element is one parameter of Bernoulli dist.
 
 % setp 2. sample the 1) topics, 2) words, 3) group connection, 4) dialog and 5) following-relations
     
     % 2.1 sample Left part
-    C = floor(rand(N,1)*1000+1);
+    C = floor(rand(N,1)*100+1);
     % C(n): number of words from user n, from 1 to 1000
     fprintf(2,'generating Left topic model part\n');
     for n=1:N
@@ -110,7 +125,7 @@ function [ T, G, F ] = generateLFN()
    data.G = G;
    data.T = T;
     
-  save('fake_data.mat','params','data','hyper');
+  save('fake_data01.mat','params','data','hyper');
 end  
 
 

@@ -9,16 +9,19 @@ function [ T, G, F ] = generateLFN()
 %   beta: KxV
 %   Phi: KxK
 %   Bern: KxK
-    N = 100;
-    V = 500;
-    K = 20;
-
-    Theta = rand(K,N); % can consider using Dirichlet r.v. instead
-    Theta = bsxfun(@rdivide, Theta, sum(Theta));
-    beta = rand(K,V);
-    beta = bsxfun(@rdivide, beta, sum(beta,2));
-    Phi = randn(K,K);
-    Bern = rand(K,K); % each element is one parameter of Bernoulli dist.
+    N = 20;
+%     V = 500;
+    V = 50;
+    K = 5;
+    
+    Theta(1:5,:) = ones
+% 
+%     Theta = rand(K,N); % can consider using Dirichlet r.v. instead
+%     Theta = bsxfun(@rdivide, Theta, sum(Theta));
+%     Beta = rand(K,V);
+%     Beta = bsxfun(@rdivide, Beta, sum(Beta,2));
+%     Phi = randn(K,K);
+%     B = rand(K,K); % each element is one parameter of Bernoulli dist.
 
 % setp 2. sample the 1) topics, 2) words, 3) group connection, 4) dialog and 5) following-relations
     
@@ -33,7 +36,7 @@ function [ T, G, F ] = generateLFN()
         for k=1:K
             idx = find(T{n}==k);
             if(~isempty(idx))
-                W{n}(idx) = sampleCat(beta(k,:)', length(idx), 1);
+                W{n}(idx) = sampleCat(Beta(k,:)', length(idx), 1);
             end
         end
     end
@@ -51,10 +54,13 @@ function [ T, G, F ] = generateLFN()
             G{p,q} = sampleCat(theta, M,1);
         end
     end
+    
     for p=1:N
         for q=1:N
+            D{p,q} = zeros(M,1);
             for m=1:M
-                D{p,q}(m) = rand(M,1)<= Bern(G{p,q}, G{p,q}); % bernoulli parameter, M(p)x1
+                D{p,q}(m) = rand(1,1)<= B(G{p,q}(m), G{p,q}(m)); % bernoulli parameter, M(p)x1
+            end
         end
     end
 
@@ -75,7 +81,7 @@ function [ T, G, F ] = generateLFN()
         for q=1:N
             mG{p,q} = zeros(K,1);
             for k=1:K
-                mG{p,q}(k) = sum(mG{p,q}==k);
+                mG{p,q}(k) = sum(G{p,q}==k);
             end
             mG{p,q} = mG{p,q}/sum(mG{p,q});
         end
@@ -83,23 +89,31 @@ function [ T, G, F ] = generateLFN()
 
     for p=1:N
         for q=1:N
-            F(p,q) = rand(1,1)<mT(p,:)*Phi*mT{p,q};
+            F(p,q) = rand(1,1)<1/(1+exp(mT(p,:)*Phi*mG{p,q}));
+            %F(p,q) = mT(p,:)*Phi*mG{p,q};
         end
     end
+%    keyboard
     % average grouping weight of one pair
-end
+    
+   Theta = Theta';
+   params.Theta = Theta;
+   params.Beta = Beta;
+   params.Phi = Phi;
+   params.B = B;
+   
+   hyper.K = K; % topic/group number
+   hyper.N= N; % graph size
+   hyper.V =V; % dictionary length
+   hyper.M = M;
 
-function X = sampleCat(theta, m, n)
-% sample multinomial (categorical) random variables of size [mxn]
-    N = m*n;
-    K = length(theta);
-    count = mnrnd(N,theta,1); 
-    % a rown vector indicating number of examples from each group
-    count = cumsum([0 count]);
-    X = zeros(N,1);
-    for k=1:K
-        X(count(k)+1:count(k+1)) = X(count(k)+1:count(k+1))+k;
-    end
-    X = X(randperm(length(X)));
-    X = reshape(X,[m,n]);
-end
+   data.W= W; % word counts
+   data.F =F;
+   data.D =D;
+   data.G = G;
+   data.T = T;
+    
+  save('fake_data.mat','params','data','hyper');
+end  
+
+
