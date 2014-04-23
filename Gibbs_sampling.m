@@ -59,7 +59,7 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
     end
     %%
 
-    MaxIter = 100;
+    MaxIter = 5;
     MaxSubIter = 20;
     LogLike_List = [];
     [LogLike, LogLike1, LogLkie2, LogLike3] = loglike_LFN(W,F,D,T,G,params,hyper);
@@ -137,7 +137,8 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
            break;
         end
 %         disp(num2str([LogLike_new loglike_new1 loglike_new2 loglike_new3]));
-    end
+        fprintf('SubIter # %d\n','subiter');
+        end
 
 
 
