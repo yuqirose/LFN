@@ -137,7 +137,7 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
            break;
         end
 %         disp(num2str([LogLike_new loglike_new1 loglike_new2 loglike_new3]));
-        fprintf('SubIter # %d\n','subiter');
+        fprintf('SubIter # %d\n',subiter);
         end
 
 
