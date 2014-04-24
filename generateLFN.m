@@ -112,8 +112,9 @@ function [ T, G, F ] = generateLFN()
     % average grouping weight of one pair
     
    Theta = Theta';
-   params.Theta = Theta;
    Theta_prime = Theta_prime';
+   params.Theta = Theta;
+  
    params.Theta_prime = Theta_prime;
    params.Beta = Beta;
    params.Phi = Phi;
