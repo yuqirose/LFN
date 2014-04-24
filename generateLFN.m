@@ -69,12 +69,13 @@ function [ T, G, F ] = generateLFN()
             G{p,q} = sampleCat(theta, M,1);
         end
     end
-    
+   
+
     for p=1:N
         for q=1:N
             D{p,q} = zeros(M,1);
             for m=1:M
-                D{p,q}(m) = rand(1,1)<= B(G{p,q}(m), G{p,q}(m)); % bernoulli parameter, M(p)x1
+                D{p,q}(m) = rand(1,1)<= B(G{p,q}(m), G{q,p}(m)); % bernoulli parameter, M(p)x1
             end
         end
     end
@@ -102,6 +103,7 @@ function [ T, G, F ] = generateLFN()
         end
     end
 
+    
     for p=1:N
         for q=1:N
             F(p,q) = rand(1,1)<1/(1+exp(mT(p,:)*Phi*mG{p,q}));
@@ -130,7 +132,7 @@ function [ T, G, F ] = generateLFN()
    data.D =D;
    data.G = G;
    data.T = T;
-    
+
   save('fake_data01.mat','params','data','hyper');
 end  
 
