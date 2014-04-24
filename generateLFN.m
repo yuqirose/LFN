@@ -7,7 +7,6 @@ function [ T, G, F ] = generateLFN()
 %   number of topics = number of groups, K
 %   Theta: KxN 
 %   beta: KxV
-%   Phi: KxK
 %   Bern: KxK
     N = 20;
 %     V = 500;
@@ -27,7 +26,6 @@ function [ T, G, F ] = generateLFN()
     Beta(2,2) = 0.51;
     Beta(3,3) = 0.51;
     Beta(4,4) = 0.51;
-    Phi = -10*ones(K,K) + 20*eye(K);
     Tau = [10,10,-10];
     B = 0.1*ones(K,K) + 0.8*eye(K);
 
@@ -36,7 +34,6 @@ function [ T, G, F ] = generateLFN()
 %     Theta = bsxfun(@rdivide, Theta, sum(Theta));
 %     Beta = rand(K,V);
 %     Beta = bsxfun(@rdivide, Beta, sum(Beta,2));
-%     Phi = randn(K,K);
 %     B = rand(K,K); % each element is one parameter of Bernoulli dist.
 
 % setp 2. sample the 1) topics, 2) words, 3) group connection, 4) dialog and 5) following-relations
@@ -111,8 +108,6 @@ function [ T, G, F ] = generateLFN()
         for q=p+1:N
             F(p,q) = rand(1,1)<1/(1+exp(-Tau(1)*mT(p,:)*mT(q,:)'-Tau(2)*mG{p,q}'*mG{q,p} - Tau(3)));
             F(q,p) = rand(1,1)<1/(1+exp(-Tau(1)*mT(p,:)*mT(q,:)'-Tau(2)*mG{p,q}'*mG{q,p} - Tau(3)));
-            % F(p,q) = rand(1,1)<1/(1+exp(-mT(p,:)*Phi*mG{p,q}));
-            % F(p,q) = mT(p,:)*Phi*mG{p,q};
         end
     end
 
@@ -126,7 +121,6 @@ function [ T, G, F ] = generateLFN()
   
    params.Theta_prime = Theta_prime;
    params.Beta = Beta;
-   params.Phi = Phi;
    params.Tau = Tau;
    params.B = B;
    

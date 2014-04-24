@@ -6,12 +6,12 @@ function prob = topic_posterior(p, Wpc, topic_cnt_p, Tp_weights, Gp_feature, F, 
     K = hyper.K;
 
     Theta= params.Theta;
-    Phi = params.Phi;
+    Tau = params.Tau;
     Beta = params.Beta;
-
+    Beta = Beta+1e-32;
+    Beta = bsxfun(@rdivide, Beta, sum(Beta,2));
     prob = zeros(1,K);
 
-    group_prob= bsxfun(@rdivide, group_cnt_p, sum(group_cnt_p,2));
 
     for k = 1: K
 
@@ -23,16 +23,19 @@ function prob = topic_posterior(p, Wpc, topic_cnt_p, Tp_weights, Gp_feature, F, 
         % it should effect the followship relationship with all other users
         %
         F_prob = 0;
-        for q = 1:size(group_prob,1)
+        for q = 1:hyper.N
             if(q~=p)
                 followprob = 1/(1+exp(-Tau(1)*topic_prob*Tp_weights{q}-Tau(2)*Gp_feature(p,q)-Tau(3)));
-                F_prob = F_prob + F(p,q)*log(followprob) + (1-F(p,q))*log(1-followprob);
+                F_prob = F_prob + F(p,q)*log(followprob+1e-32) + (1-F(p,q))*log(1-followprob+1e-32);
             end
         end
-
+        
         prob(k) = log(Theta(p,k)) + log(Beta(k,Wpc)) + F_prob;% * tmp;  
     end
 
     prob = exp(prob-max(prob));
     prob = prob./sum(prob);
+    if(isnan(sum(prob)))
+        keyboard 
+    end
 end

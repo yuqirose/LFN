@@ -33,28 +33,24 @@ function [ params_new ] = update_params_LFN (F,D, params, Tp_count, Tw_count, G_
     % normalize each row respectively
     Beta = bsxfun(@rdivide, Tw_count, sum(Tw_count,2));
 
-    % 4. update Phi (bottom part)
+    % 4. update Tau (bottom part)
     % no analytical solution
     % use numerical method
-    numer_Phi = zeros(K,K);
-    denom_Phi = zeros(K,K);
     Tp_weight = bsxfun(@rdivide, Tp_count, sum(Tp_count,2));
     G_weight = bsxfun(@rdivide, G_count, sum(G_count,3));
 
     
-    Phi = params.Phi;
-    K = size(Phi,1);
-    Phi = Phi(:);
-    [Phi, negL] = minimize(Phi, @calcFTGPhi, 200, Tp_count, G_count, F);
-    Phi = reshape(Phi,[K,K]);
-    
-    
+    Tau = params.Tau;
+    [Tau, negL] = minimize(Tau, @calcFTGTau, 200, Tp_count, G_count, F);
+    Tau
+     
     % 5. update Theta_prime
     for p = 1:N
         tmp = squeeze(G_count(p,:,:));
         Theta_prime(p,:) = sum(tmp)./ sum(sum(tmp));
     end
-    % verify the bsxfun calculation --> 
+    
+    % verify the bsxfun calculation -->
     verif = 0;
     if(verif)
         err = 0;
@@ -72,99 +68,57 @@ function [ params_new ] = update_params_LFN (F,D, params, Tp_count, Tw_count, G_
     end
     % <-- verify the bsxfun calculation 
 
-    for p=1:N
-        for q=p+1:N
-            inc = squeeze(G_weight(p,q,:))* Tp_weight(p,:);
-            numer_Phi = numer_Phi + F(p,q).*inc;
-            denom_Phi = denom_Phi + inc;
-            inc = squeeze(G_weight(q,p,:))* Tp_weight(q,:);
-            numer_Phi = numer_Phi + F(q,p).* inc;
-            denom_Phi = denom_Phi + inc;
-        end
-    end
-    Phi = numer_Phi./denom_Phi;
-
     params_new.Theta =Theta;
     params_new.Theta_prime = Theta_prime;
-    params_new.Phi = Phi;
+    params_new.Tau = Tau;
     params_new.Beta = Beta;
     params_new.B = B;
 
 
 end
 
-function [value, grad] = calcFTGPhiBernoulli(Phi, Tp_count, G_count, F)
-
+function [value, grad] = calcFTGTau(Tau, Tp_count, G_count, F)
     Tp_weight = bsxfun(@rdivide, Tp_count, sum(Tp_count,2));
     G_weight = bsxfun(@rdivide, G_count, sum(G_count,3));
     N = size(G_weight,1);
-    K = sqrt(length(Phi));
-    Phi = reshape(Phi,[K,K]);
+    K = length(Tau);
+    
+    % calculate the features from inner product of vectors
+    feature = cell(N,N);
+    for p=1:N
+        for q=p+1:N
+            feature{p,q} = [Tp_weight(p,:)*Tp_weight(q,:)'; squeeze(G_weight(p,q,:))'*squeeze(G_weight(q,p,:)); 1];
+            feature{q,p} = feature{p,q};
+        end
+    end
+    
     % 4.1 do inference
     pred = zeros(N,N);
     for p=1:N
         for q=p+1:N
-            pred(p,q) = 1/(1+exp(-trace(Phi*squeeze(G_weight(p,q,:))*Tp_weight(p,:))));
-            pred(q,p) = 1/(1+exp(-trace(Phi*squeeze(G_weight(q,p,:))*Tp_weight(q,:))));
+            pred(p,q) = 1/(1+exp(-Tau'*feature{p,q}));
+%            pred(q,p) = pred(q,p);
         end
     end
+    
     % 4.2 calculate the gradient
-    grad = zeros(K,K);
+    grad = zeros(K,1);
     for p=1:N
         for q=p+1:N
-            grad = grad + transpose(squeeze(G_weight(p,q,:))*Tp_weight(p,:))*(F(p,q)-pred(p,q));
-            grad = grad + transpose(squeeze(G_weight(q,p,:))*Tp_weight(q,:))*(F(q,p)-pred(q,p));
+            grad = grad + (F(p,q)-pred(p,q))*feature{p,q};
+%            grad = grad + (F(q,p)-pred(q,p))*feature{q,p};
         end
     end
+    
     % 4.3 calculate the value
     value = 0;
     for p=1:N
         for q=p+1:N
             value = value + F(p,q)*log(pred(p,q)+1e-32) + (1-F(p,q))*log(1-pred(p,q)+1e-32);
-            value = value + F(q,p)*log(pred(q,p)+1e-32) + (1-F(q,p))*log(1-pred(q,p)+1e-32);
+%            value = value + F(q,p)*log(pred(q,p)+1e-32) + (1-F(q,p))*log(1-pred(q,p)+1e-32);
         end
     end
     grad = -grad(:);
     value = -value;
-    % minimize instead of maximize
-%     keyboard
 end
 
-function [value, grad] = calcFTGPhiBernoulli(Phi, Tp_count, G_count, F)
-% this is the value and gradient of the (T,G)-->F subgraph
-%  if the relation P(F|T,G) is formulated with Bernoulli distribution
-%   The model is formulated using sigmoid distribution, so this function is useless
-    Tp_weight = bsxfun(@rdivide, Tp_count, sum(Tp_count,2));
-    G_weight = bsxfun(@rdivide, G_count, sum(G_count,3));
-    N = size(G_weight,1);
-    K = sqrt(length(Phi));
-    Phi = reshape(Phi,[K,K]);
-    % 4.1 do inference
-    pred = zeros(N,N);
-    for p=1:N
-        for q=p+1:N
-            pred(p,q) = trace(Phi*squeeze(G_weight(p,q,:))*Tp_weight(p,:));
-            pred(q,p) = trace(Phi*squeeze(G_weight(q,p,:))*Tp_weight(q,:));
-        end
-    end
-    % 4.2 calculate the gradient
-    grad = zeros(K,K);
-    for p=1:N
-        for q=p+1:N
-            grad = grad + squeeze(G_weight(p,q,:))*Tp_weight(p,:)*(F(p,q)-pred(p,q))/(pred(p,q)*(1-pred(p,q))+1e-32);
-            grad = grad + squeeze(G_weight(q,p,:))*Tp_weight(q,:)*(F(q,p)-pred(q,p))/(pred(q,p)*(1-pred(q,p))+1e-32);
-        end
-    end
-    % 4.3 calculate the value
-    value = 0;
-    for p=1:N
-        for q=p+1:N
-            value = value + F(p,q)*log(pred(p,q)+1e-32) + (1-F(p,q))*log(1-pred(p,q)+1e-32);
-            value = value + F(q,p)*log(pred(q,p)+1e-32) + (1-F(q,p))*log(1-pred(q,p)+1e-32);
-        end
-    end
-    grad = -grad(:);
-    value = -value;
-    % minimize instead of maximize
-%     keyboard
-end

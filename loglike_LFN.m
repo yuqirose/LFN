@@ -8,9 +8,9 @@ M = hyper.M;
 %%
 Theta = params.Theta;
 Theta_prime = params.Theta_prime;
-Phi = params.Phi;
 Beta = params.Beta;
 B = params.B;
+Tau = params.Tau;
 
 loglike = 0;
 loglike1 = 0;
@@ -76,13 +76,10 @@ for p=1:N
         Fpq = F(p,q);
         Fqp = F(q,p);
         %Gavg = histc(G{p,q},[1:K])/sum(histc(G{p,q},[1:K]));
-        f3a = 1/(1+exp(-Tavg{p}'*Phi*Gavg{p,q}));% TBD:transpose
-        f3b = 1/(1+exp(-Tavg{q}'*Phi*Gavg{q,p}));
+        f3 = 1/(1+exp(-Tau(1)*Tavg{p}'*Tavg{q} - Tau(2)*Gavg{p,q}'*Gavg{q,p}));% TBD:transpose
    
-        loglike = loglike + Fpq*log(f3a) +(1-Fpq)*log(1-f3a);
-        loglike = loglike + Fqp*log(f3b) +(1-Fqp)*log(1-f3b);
+        loglike = loglike + 2*Fpq*log(f3+1e-32) + 2*(1-Fpq)*log(1-f3+1e-32);
         
-        loglike3 = loglike3 + Fpq*log(f3a) +(1-Fpq)*log(1-f3a);
-        loglike3 = loglike3 + Fqp*log(f3b) +(1-Fqp)*log(1-f3b);
+        loglike3 = loglike3 + 2*Fpq*log(f3+1e-32) + 2*(1-Fpq)*log(1-f3+1e-32);
     end
 end

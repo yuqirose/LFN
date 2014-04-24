@@ -17,7 +17,7 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
     Theta = ones(N, K)*(1/K);
     Theta_prime = ones(N, K)*(1/K);
     Beta = ones(K,V)*(1/V);
-    Tau = zeros(1,3);
+    Tau = rand(3,1);
     B = diag(ones(K,1)*0.8) +0.1*ones(K,K);
     
     params.Theta = Theta;
@@ -54,10 +54,21 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
     
     %% EM algorithm using Gibbs Sampling for Inference at E stage
     MaxIter = 5;
-    MaxSubIter = 20;
+    MaxSubIter = 2;%20;
     LogLike_List = [];
     [LogLike, LogLike1, LogLike2, LogLike3] = loglike_LFN(W,F,D,T,G,params,hyper);
+    disp(['Initialization-> L: ' num2str(floor(LogLike)) ' L1: ' num2str(floor(LogLike1)) ' L2: ' num2str(floor(LogLike2)) ' L3: ' num2str(LogLike3)]);
     
+    Tpcount = cell(N,1);
+    Tp_weights = cell(N,1); % assistant variables, used to calc P(F|T,G)
+    Gp_weights = cell(N,1); % assistant variables, used to calc P(F|T,G)
+    for p=1:N
+        Tpcount{p} = Tp_count(p,:);
+        Tp_weights{p} = Tpcount{p}'/sum(Tpcount{p});
+        Gp_weights{p} = bsxfun(@rdivide, squeeze(G_count(p,:,:)), sum(squeeze(G_count(p,:,:)),2));
+    end
+
+    Gp_feature = zeros(N,N);
     for iter = 1:MaxIter
         % E stage
         for subiter = 1:MaxSubIter
@@ -65,17 +76,10 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
             
             % note 1. during sampling of Left part, the right part, G is
             % unchanged, use Gp_weight as input to the User-sampler
-            
-            Tpcount = cell(N,1);
-            Tp_weights = cell(N,1); % assistant variables, used to calc P(F|T,G)
-            Gp_weights = cell(N,1); % assistant variables, used to calc P(F|T,G)
-            for p=1:N
-                Tpcount{p} = Tp_count(p,:);
-                Tp_weights{p} = Tpcount{p}/sum(Tpcount{p});
-                Gp_weights{p} = bsxfun(@rdivide, squeeze(G_count(p,:,:)), sum(squeeze(G_count(p,:,:)),2));
-            end
-            
-            Gp_feature = zeros(N,N);
+    
+            % before sampling latent topics
+            % calculate the Grouping feature 
+            % which is used a lot but does not change during T sampling
             for p=1:N
                 for q=p+1:N
                     Gp_feature(p,q) = Gp_weights{p}(q,:)*Gp_weights{q}(p,:)';
@@ -87,17 +91,22 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
                 [T{p}, Tpcount{p}] = ...
                     sampleUser(p, W{p}, Tpcount{p}, T{p}, Tp_weights, Gp_feature, F, params, hyper);
             end
-            
+
+            % after sampling each user, update the Tp_weight
             for p=1:N
                 Tp_count(p,:)=Tpcount{p};
-                Tp_weights{p} = Tp_count{p}/sum(Tp_count{p});
+                Tp_weights{p} = Tpcount{p}'/sum(Tpcount{p});
             end
             
+            
+            % before sampling grouping nodes G
+            % calculate the topic feature 
+            % which is used a lot but does not change during G sampling 
             Tp_features = zeros(N,N);
             for p=1:N
                 for q=p+1:N
                     Tp_features(p,q) = Tp_weights{p}'*Tp_weights{q};
-                    Tp_features(q,p) = Tp_features(p,q)';
+                    Tp_features(q,p) = Tp_features(p,q);
                 end
             end
             
@@ -105,36 +114,33 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
             for p=1:N
                 for q = p+1:N
                     for m = 1:M
-                        Dpqm = D{p,q}(m);
-                        Dqpm = D{q,p}(m);
                         % p => q
-                        Gpqm_old = G{p,q}(m);
-                        Gqpm_old = G{q,p}(m);
-                        G_count(p,q,Gpqm_old) = G_count(p,q,Gpqm_old) -1;
+                        G_count(p,q,G{p,q}(m)) = G_count(p,q,G{p,q}(m))-1;
 
-                        % TBD:process with networks
                         Gpq_count = squeeze(G_count(p,q,:));
                         prob_G = ...
-                            group_posterior( p,q, Dpqm, Dqpm, Gqpm_old, F(p,q), Tp_features, Gpq_count, params, hyper);
+                            group_posterior( p, q, D{p,q}(m), D{q,p}(m), G{q,p}(m), ...
+                                F(p,q), Tp_features(p,q), Gpq_count, Gp_weights{q}(p,:), params,hyper);
                         Gpqm_new = find(mnrnd(1,prob_G)==1);
                         G{p,q}(m) = Gpqm_new;
                         G_count(p,q, Gpqm_new) = G_count(p,q, Gpqm_new)+1;
-
+                    end
+                    Gp_weights{p} = bsxfun(@rdivide, squeeze(G_count(p,:,:)), sum(squeeze(G_count(p,:,:)),2));
+                
+                    for m = 1:M
                         % q => p
-                        Gqpm_old = G{q,p}(m);
-                        Gpqm_old = G{p,q}(m);
-                        G_count(q,p,Gqpm_old) = G_count(q,p,Gqpm_old) -1;
-
-                        % TBD:process with networks
+                        G_count(q,p,G{q,p}(m)) = G_count(q,p,G{q,p}(m))-1;
 
                         Gqp_count = squeeze(G_count(q,p,:));
-
-                        prob_G = group_posterior( q,p, Dqpm, Dpqm, Gpqm_old, F(q,p), Tp_count(q,:), Gqp_count, params,hyper);
-                        Gqpm_new = find(mnrnd(1,prob_G)==1);
-                        G{q,p}(m) = Gqpm_new;
-                        G_count(q,p, Gqpm_new) = G_count(q, p, Gqpm_new)+1;
-
+                        prob_G = ...
+                            group_posterior( q, p, D{q,p}(m), D{p,q}(m), G{p,q}(m), ...
+                                F(q,p), Tp_features(q,p), Gqp_count, Gp_weights{p}(q,:), params,hyper);
+                        Gpqm_new = find(mnrnd(1,prob_G)==1);
+                        G{q,p}(m) = Gpqm_new;
+                        G_count(q,p, Gpqm_new) = G_count(q,p, Gpqm_new)+1;
                     end
+                    Gp_weights{q} = bsxfun(@rdivide, squeeze(G_count(q,:,:)), sum(squeeze(G_count(q,:,:)),2));
+
                 end
             end
 
@@ -144,6 +150,8 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
                 break;
             end
             fprintf('SubIter # %d\n',subiter);
+            disp(['SubIter # ' num2str(subiter) '-> L: ' num2str(floor(LogLike_new)) ' L1: ' num2str(floor(loglike_new1)) ' L2: ' num2str(floor(loglike_new2)) ' L3: ' num2str(loglike_new3)]);
+            LogLike = LogLike_new;
         end
 
 
@@ -180,6 +188,7 @@ function [Tp, Tp_count] = sampleUser(p, Wp, Tp_count, Tp, Tp_weights, Gp_feature
          Tp_count(Tp(c)) = Tp_count(Tp(c)) -1;
 
          prob_T = topic_posterior(p, Wp(c), Tp_count, Tp_weights, Gp_feature, F, params, hyper);
+         
          Tpc_new = find(mnrnd(1, prob_T)==1);
          Tp(c) = Tpc_new;
          Tp_count(Tpc_new) = Tp_count(Tpc_new)+1;
