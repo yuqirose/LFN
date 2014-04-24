@@ -7,6 +7,7 @@ V = hyper.V; % dictionary length
 M = hyper.M;
 %%
 Theta = params.Theta;
+Theta_prime = params.Theta_prime;
 Phi = params.Phi;
 Beta = params.Beta;
 B = params.B;
@@ -50,16 +51,18 @@ for p=1:N
             Gqpm = G{q,p}(m);
         
             % part right: (G|\theta) and (D|G,B)
-            f1 = (Theta(p,:)+Theta(q,:))/2;
+%             f1 = (Theta(p,:)+Theta(q,:))/2;
+            f1a = Theta_prime(p,:);
+            f1b = Theta_prime(q,:);
             f2a = B(Gpqm, Gqpm);
             f2b = B(Gqpm, Gpqm);
 
             
-            loglike = loglike + log(f1(Gpqm)+1e-32) + log(f1(Gqpm)+1e-32);
+            loglike = loglike + log(f1a (Gpqm)+1e-32) + log(f1b(Gqpm)+1e-32);
             loglike = loglike + Dpqm*log(f2a+1e-32) + (1-Dpqm)*log(1-f2a+1e-32);
             loglike = loglike + Dqpm*log(f2b+1e-32) + (1-Dqpm)*log(1-f2b+1e-32);
 
-            loglike2 = loglike2 + log(f1(Gpqm)+1e-32) + log(f1(Gqpm)+1e-32);
+            loglike2 = loglike2 + log(f1a(Gpqm)+1e-32) + log(f1b(Gqpm)+1e-32);
             loglike2 = loglike2 + Dpqm*log(f2a+1e-32) + (1-Dpqm)*log(1-f2a+1e-32);
             loglike2 = loglike2 + Dqpm*log(f2b+1e-32) + (1-Dqpm)*log(1-f2b+1e-32);
             if(isnan(loglike2))

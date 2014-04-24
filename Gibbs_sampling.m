@@ -14,11 +14,13 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
 
     %% params
     Theta = ones(N, K)*(1/K);
+    Theta_prime =  ones(N, K)*(1/K);
     Beta = ones(K,V)*(1/V);
     Phi =  diag(ones(K,1));
     B = diag(ones(K,1)*0.8) +0.1*ones(K,K);
 
     params.Theta = Theta;
+    params.Theta_prime = Theta_prime;
     params.Beta = Beta;
     params.Phi = Phi;
     params.B = B;
@@ -28,8 +30,6 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
     % G = cell(N,N);
     % T = data.T;
     % G = data.G;
-
-
 
     %% randomly assign labels
 

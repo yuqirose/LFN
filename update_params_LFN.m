@@ -5,6 +5,7 @@ function [ params_new ] = update_params_LFN (F,D, params, Tp_count, Tw_count, G_
     % 1. update Theta
     Theta = bsxfun(@rdivide, Tp_count, sum(Tp_count,2));
     [N,K] = size(Theta);
+   
 
     % 2. update B (Right part)
     numer_B = zeros(K,K);
@@ -46,7 +47,13 @@ function [ params_new ] = update_params_LFN (F,D, params, Tp_count, Tw_count, G_
     Phi = Phi(:);
     [Phi, negL] = minimize(Phi, @calcFTGPhi, 200, Tp_count, G_count, F);
     Phi = reshape(Phi,[K,K]);
-
+    
+    
+    % 5. update Theta_prime
+    for p = 1:N
+        tmp = squeeze(G_count(p,:,:));
+        Theta_prime(p,:) = sum(tmp)./ sum(sum(tmp));
+    end
     % verify the bsxfun calculation --> 
     verif = 0;
     if(verif)
@@ -78,6 +85,7 @@ function [ params_new ] = update_params_LFN (F,D, params, Tp_count, Tw_count, G_
     Phi = numer_Phi./denom_Phi;
 
     params_new.Theta =Theta;
+    params_new.Theta_prime = Theta_prime;
     params_new.Phi = Phi;
     params_new.Beta = Beta;
     params_new.B = B;

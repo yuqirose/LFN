@@ -3,7 +3,7 @@ function [ prob ] = group_posterior(p,q, Dpqm, Dqpm, Gqpm, Fpq, topic_cnt_p,grou
 %   Detailed explanation goes here
 
 K = hyper.K;
-Theta= params.Theta;
+Theta_prime= params.Theta_prime;
 Phi = params.Phi;
 B = params.B;
 
@@ -28,7 +28,7 @@ for k = 1:K
    % should we also consider the effect from B(q, Gpqm) where q ~= p?
    % ???
 
-    prob(k) = (Theta(p,k)+ Theta(q,k))/2*link_prob*(F_prob^Fpq)*(1-F_prob)^(1-Fpq);
+    prob(k) = (Theta_prime(p,k))*link_prob*(F_prob^Fpq)*(1-F_prob)^(1-Fpq);
    
 end
 

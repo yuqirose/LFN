@@ -1,4 +1,4 @@
-function [ T, G] = Rnd_generateLFN(W,D,K, M)
+function [ T, G] = Rnd_generateLFN(W,D, K, M)
 N = length(W);
 
 T = cell(1,N);

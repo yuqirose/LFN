@@ -19,6 +19,9 @@ function [ T, G, F ] = generateLFN()
     Theta(:,11:15) = repmat([0;0;1;0],[1,5]);
     Theta(:,16:20) = repmat([0;0;0;1],[1,5]);
     
+    
+    Theta_prime = fliplr(Theta);
+    
     Beta = 0.01*ones(K,V);
     Beta(1,1) = 0.51;
     Beta(2,2) = 0.51;
@@ -61,7 +64,7 @@ function [ T, G, F ] = generateLFN()
     D = cell(N,N);
     for p=1:N
         for q=1:N
-            theta = 0.5*(Theta(:,p)+Theta(:,q));
+            theta = Theta_prime(:,p);
             % sample M(p) diaglog (latent) variables
             G{p,q} = sampleCat(theta, M,1);
         end
@@ -110,6 +113,8 @@ function [ T, G, F ] = generateLFN()
     
    Theta = Theta';
    params.Theta = Theta;
+   Theta_prime = Theta_prime';
+   params.Theta_prime = Theta_prime;
    params.Beta = Beta;
    params.Phi = Phi;
    params.B = B;
