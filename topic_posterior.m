@@ -22,7 +22,7 @@ function [ prob ] = topic_posterior( p, Wpc, topic_cnt_p, group_cnt_p, F, params
         F_prob = 0;
         for q = 1:size(group_prob,1)
             if(q~=p)
-                followprob = 1/(1+exp(topic_prob*Phi*transpose(group_prob(q,:))));
+                followprob = 1/(1+exp(-topic_prob*Phi*transpose(group_prob(q,:))));
                 F_prob = F_prob + F(p,q)*log(followprob) + (1-F(p,q))*log(1-followprob);%log( 1/(1+exp(topic_prob*Phi*transpose(group_prob(q,:)))) );
             end
         end

@@ -18,7 +18,7 @@ for k = 1:K
     topic_prob= topic_cnt_p/sum(topic_cnt_p);
 
    % followship between user p and q
-	F_prob= 1/(1+exp(topic_prob*Phi*group_prob));
+	F_prob= 1/(1+exp(-topic_prob*Phi*group_prob));
 
    % 2. the right part, followship from param and to dialogue
 %    link_prob  = B(k,Gqpm)^Dpqm+(1-B(k,Gqpm))^(1-Dpqm);

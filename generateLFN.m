@@ -27,8 +27,9 @@ function [ T, G, F ] = generateLFN()
     Beta(2,2) = 0.51;
     Beta(3,3) = 0.51;
     Beta(4,4) = 0.51;
-    Phi = 0.1*ones(K,K) +diag(ones(K,1)*0.8);
-    B = Phi;
+    Phi = -10*ones(K,K) + 20*eye(K);
+    Tau = [10,10,-10];
+    B = 0.1*ones(K,K) + 0.8*eye(K);
 
 % 
 %     Theta = rand(K,N); % can consider using Dirichlet r.v. instead
@@ -80,6 +81,7 @@ function [ T, G, F ] = generateLFN()
         end
     end
 
+
     % 2.3 sample the Following relation
     fprintf(2,'generating followship part\n');
     F = zeros(N,N);
@@ -104,13 +106,18 @@ function [ T, G, F ] = generateLFN()
     end
 
     
+    
     for p=1:N
-        for q=1:N
-            F(p,q) = rand(1,1)<1/(1+exp(mT(p,:)*Phi*mG{p,q}));
-            %F(p,q) = mT(p,:)*Phi*mG{p,q};
+        for q=p+1:N
+            F(p,q) = rand(1,1)<1/(1+exp(-Tau(1)*mT(p,:)*mT(q,:)'-Tau(2)*mG{p,q}'*mG{q,p} - Tau(3)));
+            F(q,p) = rand(1,1)<1/(1+exp(-Tau(1)*mT(p,:)*mT(q,:)'-Tau(2)*mG{p,q}'*mG{q,p} - Tau(3)));
+            % F(p,q) = rand(1,1)<1/(1+exp(-mT(p,:)*Phi*mG{p,q}));
+            % F(p,q) = mT(p,:)*Phi*mG{p,q};
         end
     end
-%    keyboard
+
+    keyboard
+
     % average grouping weight of one pair
     
    Theta = Theta';
@@ -120,6 +127,7 @@ function [ T, G, F ] = generateLFN()
    params.Theta_prime = Theta_prime;
    params.Beta = Beta;
    params.Phi = Phi;
+   params.Tau = Tau;
    params.B = B;
    
    hyper.K = K; % topic/group number
