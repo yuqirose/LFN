@@ -6,6 +6,7 @@ fid = fopen('W_N=102.txt');
 
 tline = fgets(fid);
 p = 1;
+V = 1000;
 while ~feof(fid)
     line = fgets(fid); %# read line by line
     words = textscan(line,'%s');
@@ -15,7 +16,7 @@ while ~feof(fid)
         pair = textscan(words{i},'%d,%d');
         wordID = pair{1};
         wordcount = pair{2};
-        if(wordID==0)
+        if(wordID>V)
             continue;
         end
         for c = 1:wordcount;
@@ -32,6 +33,8 @@ fclose(fid);
 
 %%
 F = load('F_N=102.txt');
+
 %%
 D = load('D_N=102.txt');
+D = D(1:101,1:101);
 save('toy_N=102.mat','W','F','D');
