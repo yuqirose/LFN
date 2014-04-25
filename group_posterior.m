@@ -29,14 +29,16 @@ for k = 1:K
 	F_prob= 1/(1+exp(-Tau(1)*T_feature - Tau(2)*Gq_weight*Gp_weight-Tau(3)));
 
     % 2. the right part, followship from param and to dialogue
-    link_prob = (B(k,Gqpm)^Dpqm)*((1-B(k,Gqpm))^(1-Dpqm)); % bernoulli prob
-    link_prob = link_prob*(B(Gqpm,k)^Dqpm)*((1-B(Gqpm,k))^(1-Dqpm));
+    link_prob = Dpqm*log(B(k,Gqpm)+1e-32)+ (1-Dpqm)*log(1-B(k,Gqpm)+1e-32); % bernoulli prob
+    link_prob = link_prob + Dqpm*log(B(Gqpm,k)+1e-32)+ (1-Dqpm)*log(1-B(Gqpm,k)+1e-32); % bernoulli prob
+    %link_prob = link_prob*(B(Gqpm,k)^Dqpm)*((1-B(Gqpm,k))^(1-Dqpm));
 
-    prob(k) = (Theta_prime(p,k))*link_prob*(F_prob^Fpq)*(1-F_prob)^(1-Fpq);
-   
+%    prob(k) = log(Theta_prime(p,k)) + link_prob + Fpq*log(F_prob+1e-32) + (1-Fpq)*log(1-F_prob+1e-32);
+    prob(k) = log(Theta_prime(p,k)) + link_prob ;
 end
 
-prob = prob /sum(prob); 
+prob = exp(prob-max(prob));
+prob = prob/sum(prob); 
 
 end
 

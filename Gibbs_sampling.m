@@ -53,12 +53,14 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
     end
     
     %% EM algorithm using Gibbs Sampling for Inference at E stage
-    MaxIter = 5;
-    MaxSubIter = 2;%20;
+    MaxIter = 25;
+    MaxSubIter = 10;%20;
     LogLike_List = [];
     [LogLike, LogLike1, LogLike2, LogLike3] = loglike_LFN(W,F,D,T,G,params,hyper);
     disp(['Initialization-> L: ' num2str(floor(LogLike)) ' L1: ' num2str(floor(LogLike1)) ' L2: ' num2str(floor(LogLike2)) ' L3: ' num2str(LogLike3)]);
     
+    process.InitParam = params;
+    process.InitL = [LogLike, LogLike1, LogLike2, LogLike3];
     Tpcount = cell(N,1);
     Tp_weights = cell(N,1); % assistant variables, used to calc P(F|T,G)
     Gp_weights = cell(N,1); % assistant variables, used to calc P(F|T,G)
@@ -157,7 +159,7 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
 
     
         % Update parameters
-
+        Tw_count = Tw_count*0;
         for p = 1:N
             T_p = T{p};
             C = numel(T_p); % total words
@@ -166,11 +168,18 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
                 Tw_count(T_p(c),Wpc) = Tw_count(T_p(c),Wpc) +1;
             end
         end
+        Tw_count(:,1:4)
         params = update_params_LFN(F,D,params,Tp_count,Tw_count, G_count, G);
         fprintf('Iter # %d\n',iter );
         disp(num2str([LogLike_new loglike_new1 loglike_new2 loglike_new3]));
         LogLike_List = [LogLike_List , LogLike_new ];
+        process.params{iter} = params;
+        process.L(iter,1) = LogLike_new;
+        process.L(iter,2) = loglike_new1;
+        process.L(iter,3) = loglike_new2;
+        process.L(iter,4) = loglike_new3;
     end
+    save('LearnProcess.mat','process');
 end
 
 

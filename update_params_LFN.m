@@ -41,7 +41,8 @@ function [ params_new ] = update_params_LFN (F,D, params, Tp_count, Tw_count, G_
 
     
     Tau = params.Tau;
-    [Tau, negL] = minimize(Tau, @calcFTGTau, 200, Tp_count, G_count, F);
+    lambda = 0.001;
+    [Tau, negL] = minimize(Tau, @calcFTGTau, 200, Tp_count, G_count, F, lambda);
     Tau
      
     % 5. update Theta_prime
@@ -77,7 +78,7 @@ function [ params_new ] = update_params_LFN (F,D, params, Tp_count, Tw_count, G_
 
 end
 
-function [value, grad] = calcFTGTau(Tau, Tp_count, G_count, F)
+function [value, grad] = calcFTGTau(Tau, Tp_count, G_count, F, lambda)
     Tp_weight = bsxfun(@rdivide, Tp_count, sum(Tp_count,2));
     G_weight = bsxfun(@rdivide, G_count, sum(G_count,3));
     N = size(G_weight,1);
@@ -118,7 +119,10 @@ function [value, grad] = calcFTGTau(Tau, Tp_count, G_count, F)
 %            value = value + F(q,p)*log(pred(q,p)+1e-32) + (1-F(q,p))*log(1-pred(q,p)+1e-32);
         end
     end
+
     grad = -grad(:);
     value = -value;
+    value = value + 0.5*lambda*Tau'*Tau;
+    grad = grad + lambda*Tau;
 end
 
