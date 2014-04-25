@@ -2,6 +2,9 @@
 clear; clc;
 addpath(genpath('.'));
 
+nTopic = 5;
+
+F = load('F_N=30.txt');
 
 times = ['2010-09--2010-12';'2011-01--2011-04';'2011-05--2011-08';'2011-09--2011-12';'2012-01--2012-04'...
      ;'2012-05--2012-08';'2012-09--2012-12';'2013-01--2013-04'];
@@ -24,9 +27,9 @@ for t = 1: size(times,1)-1
 
 
     %% take WS and DS as input, output WP, Z
+        
 
-
-     [T,G, params, LogLike_List] = GibbsSamplerLFN( WS , DS , nTopic , BURNIN  );
+     [T,G, params, LogLike_List] = GibbsSamplerLFN( WS , DS , AD, F,nTopic );
 
      theta = params.Theta;
      beta= params.beta;

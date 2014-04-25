@@ -4,12 +4,12 @@ function [T,G, params, LogLike_List] = GibbsSamplerLFN( WS , DS , D, F, nTopic  
 nDoc = max(DS);
 nTerm = max(WS);
 
-W = cell(1,nDoc);
+W = cell(nDoc,1);
 for i = 1:length(DS)
     W{DS(i)} = [W{DS(i)} WS(i)];
 end
-
-D = num2cell(full(D));
+D = cell(nDoc, nDoc);
+D = mat2cell(D,)
 
 data.W = W;
 data.F =  F;
@@ -19,7 +19,6 @@ hyper.K = nTopic;
 hyper.V = nTerm;
 hyper.M = 1;
 hyper.N= nDoc;
-
 [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper );
     
 end
