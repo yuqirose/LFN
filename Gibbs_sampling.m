@@ -178,6 +178,9 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
         process.L(iter,2) = loglike_new1;
         process.L(iter,3) = loglike_new2;
         process.L(iter,4) = loglike_new3;
+
+        matname = sprintf('N30_iter%d.mat',iter);
+        save(matname, 'params','hyper','process');
     end
     save('LearnProcess.mat','process');
 end
@@ -191,15 +194,22 @@ function [Tp, Tp_count] = sampleUser(p, Wp, Tp_count, Tp, Tp_weights, Gp_feature
 % Tp_count: the count of topics of user p
 % Gp_count: 
 % function [T, Tp_count] = sampleUser(W, p, Tp_count)
-    
-    C = numel(Wp); % total words
+    wunic = unique(Wp);
+    C = length(wunic);
+    % C = numel(Wp); % total words
     for c = 1:C
-         Tp_count(Tp(c)) = Tp_count(Tp(c)) -1;
+        idx = find(Wp==wunic(c));
+        idxc = idx(1);
 
-         prob_T = topic_posterior(p, Wp(c), Tp_count, Tp_weights, Gp_feature, F, params, hyper);
-         
-         Tpc_new = find(mnrnd(1, prob_T)==1);
-         Tp(c) = Tpc_new;
-         Tp_count(Tpc_new) = Tp_count(Tpc_new)+1;
+        Tp_count(Tp(idxc)) = Tp_count(Tp(idxc)) - 1;
+        prob_T = topic_posterior(p, Wp(idxc), Tp_count, Tp_weights, Gp_feature, F, params, hyper);
+        Tp_count(Tp(idxc)) = Tp_count(Tp(idxc)) + 1;
+        
+        for i=1:length(idx)
+            Tp_count(Tp(idx(i))) = Tp_count(Tp(idx(i))) - 1;
+            Tpc_new = find(mnrnd(1, prob_T)==1);
+            Tp(idx(i)) = Tpc_new;
+            Tp_count(Tpc_new) = Tp_count(Tpc_new)+1;
+        end
     end
 end
