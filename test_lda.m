@@ -1,4 +1,3 @@
-clear; clc;
 
 
 % The starting seed number
@@ -25,9 +24,11 @@ for t = 1: size(times,1)-1
     tic
     datafname = strcat('N=30-',Train_time,'.mat');
     load(datafname); 
-    [ WP, AT , Z , X ] = GibbsSamplerAT( WS , DS , AD , T , BURNIN , ALPHA , BETA , SEED , OUTPUT );
+    [ WP,Z ] = GibbsSamplerLDA( WS , DS , T , BURNIN , ALPHA , BETA , SEED , OUTPUT );
     toc
     
-    [perplexity ]  =  eval_perplexity(Train_time, Test_time, WP,Z);
+    [perplexity ]  =  eval_perplexity(Train_time, Test_time, WP,DP,Z);
     pers = [pers, perplexity];
 end
+
+
