@@ -43,6 +43,6 @@ AD = load(strcat('D-small-N=',N,'-',time,'.txt'));
 % make sure there is at least author for each document
 AD = AD+diag(ones(p-1,1));
 AD = sparse(double(AD>0));
-save(strcat('N=',N,'-',time,'.mat'),'WS','DS','AD');
+save(strcat('Data/small_N=252/N=',N,'-',time,'.mat'),'WS','DS','AD');
 end
 

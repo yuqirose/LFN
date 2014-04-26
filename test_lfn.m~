@@ -26,13 +26,12 @@ for t = 1: size(times,1)-1
     datafname = strcat('Data/small_N=252/N=',N,'-',Train_time,'.mat');
     load(datafname); 
 
-    fprintf('Data loaded \n');
+
     %% take WS and DS as input, output LFN learned model
         
-    
+
      [T,G, params, LogLike_List] = GibbsSamplerLFN( WS , DS , AD, F,nTopic );
-    fprintf('Training finished \n');
-     %%
+   %%
      theta = params.Theta;
      beta= params.beta;
      
@@ -48,7 +47,7 @@ for t = 1: size(times,1)-1
     
     pers = [pers perplexity];  
     save(strcat('./Result/',Train_time, '_N=',N,'_LFN.mat'),'T','G','params','LogLike_List','perplexity');     
-    fprinft('Result saved\n');
+
 end 
 
 disp(pers);
