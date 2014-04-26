@@ -32,12 +32,15 @@ end
 Tavg = cell(N,1);
 for p=1:N
     Tavg{p} = histc(T{p},[1:K])/sum(histc(T{p},[1:K]));
+    Tavg{p} = reshape(Tavg{p},[K,1]);
 end
 Gavg = cell(N,N);
 for p=1:N
     for q=p+1:N
         Gavg{p,q} = histc(G{p,q},[1:K])/sum(histc(G{p,q},[1:K]));
+        Gavg{p,q} = reshape(Gavg{p,q},[K,1]);
         Gavg{q,p} = histc(G{q,p},[1:K])/sum(histc(G{q,p},[1:K]));
+        Gavg{q,p} = reshape(Gavg{q,p},[K,1]);
     end
 end
 
