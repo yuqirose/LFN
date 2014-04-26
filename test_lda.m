@@ -3,9 +3,11 @@
 % The starting seed number
 SEED = 1;
 OUTPUT = 0;
+N = int2str(30);
 T = 5; 
 
-BETA  = 0.01;
+
+BETA  = 1;
 ALPHA = 1;
 BURNIN   = 100;
 
@@ -19,16 +21,18 @@ times = ['2010-09--2010-12';'2011-01--2011-04';'2011-05--2011-08';'2011-09--2011
 pers = [];
 for t = 1: size(times,1)-1
     Train_time = times(t,:);
-    Test_time =  times(t+1,:);
+    Test_time =  times(t,:);
     disp(Train_time);
     tic
-    datafname = strcat('N=30-',Train_time,'.mat');
+    datafname = strcat('N=',N,'-',Train_time,'.mat');
     load(datafname); 
-    [ WP,Z ] = GibbsSamplerLDA( WS , DS , T , BURNIN , ALPHA , BETA , SEED , OUTPUT );
+    [ WP,DP,Z ] = GibbsSamplerLDA( WS , DS , T , BURNIN , ALPHA , BETA , SEED , OUTPUT );
+%     load(strcat('./Result/',Train_time, '_N=',N,'_LDA.mat'));
     toc
     
-    [perplexity ]  =  eval_perplexity(Train_time, Test_time, WP,DP,Z);
+    [perplexity, theta, phi ]  =  eval_perplexity(N, Train_time, Test_time, T, WP,Z);
     pers = [pers, perplexity];
+    save(strcat('./Result/',Train_time, '_N=',N,'_LDA.mat'),'WP','AT','Z','X','perplexity','theta','phi');
 end
 
 

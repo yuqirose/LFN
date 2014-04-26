@@ -26,13 +26,16 @@ for t = 1: size(times,1)-1
     load(datafname); 
 
 
-    %% take WS and DS as input, output WP, Z
+    %% take WS and DS as input, output LFN learned model
         
 
      [T,G, params, LogLike_List] = GibbsSamplerLFN( WS , DS , AD, F,nTopic );
-
+     
+   %%
      theta = params.Theta;
      beta= params.beta;
+     
+     reVal = 0;
      for i = 1:length(DS_test)
         tmp = 0;
         for k = 1:nTopic

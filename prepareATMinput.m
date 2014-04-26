@@ -1,16 +1,13 @@
 %PREPAREATMINPUT Summary of this function goes here
 %   Detailed explanation goes here
-clear;clc;
+function [WS,DS,AD] = prepareATMinput(N , time )
 DS = [];
 WS = [];
 
-times = ['2010-09--2010-12';'2011-01--2011-04';'2011-05--2011-08';'2011-09--2011-12';'2012-01--2012-04'...
-     ;'2012-05--2012-08';'2012-09--2012-12';'2013-01--2013-04'];
+% times = ['2010-09--2010-12';'2011-01--2011-04';'2011-05--2011-08';'2011-09--2011-12';'2012-01--2012-04'...
+%      ;'2012-05--2012-08';'2012-09--2012-12';'2013-01--2013-04'];
 
-for t = 1:size(times,1)
-    time = times(t,:);
-    disp(time);
-fname = strcat('W-small-N=30-',time,'.txt');
+fname = strcat('W-small-N=',N,'-',time,'.txt');
 fid = fopen(fname);
 p = 1;
 
@@ -35,16 +32,17 @@ while ~feof(fid)
     end
     WS = [WS,Wp];
     DS = [DS,Dp];
-    fprintf('%d\n',p);
+%     fprintf('%d\n',p);
 
     p = p+1;
  
 end
 WS = double(WS);
 
-AD = load(strcat('D-small-N=30-',time,'.txt'));
+AD = load(strcat('D-small-N=',N,'-',time,'.txt'));
 % make sure there is at least author for each document
 AD = AD+diag(ones(p-1,1));
 AD = sparse(double(AD>0));
-save(strcat('N=30-',time,'.mat'),'WS','DS','AD');
+save(strcat('N=',N,'-',time,'.mat'),'WS','DS','AD');
 end
+
