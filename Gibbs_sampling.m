@@ -1,9 +1,10 @@
-function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
+function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper, params, nameprefix )
 % GIBBS_SAMPLING : Gibbs sampling method for LFN model
 % Direct implementation of Gibb sampling
+    
+    
 
-
-    thres = 1e-3;
+    thres = 5e-5;
     %% intialization
     % preparison
     W = data.W;
@@ -17,6 +18,7 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
 
     
     % randomly initialize the parameters
+    %{
     Theta = ones(N, K)*(1/K);
     Theta_prime = ones(N, K)*(1/K);
     Beta = ones(K,V)*(1/V);
@@ -28,13 +30,17 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
     params.Beta = Beta;
     params.Tau = Tau;
     params.B = B;
-
+    %}
+    Theta = params.Theta;
+    Theta_prime = params.Theta_prime;
+    Beta = params.Beta;
+    Tau = params.Tau;
+    B = params.B;
 
     % randomly sample the initial latent variables
     % T: NxN cell array
     % G: NxN cell array
     [ T, G] = Rnd_generateLFN(W, D, K,M);
-    
     maxC = 0;
     for i=1:N
         if(maxC<length(W{i}))
@@ -46,7 +52,7 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
         Ws(1:length(W{i}), i) = W{i}';
     end
     Ts = Ws*0;
-    for i=1:30
+    for i=1:N
         Ts(1:length(T{i}),i) = T{i};
     end
     numToken = sum(Ws>0);
@@ -68,6 +74,8 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
     
     %% EM algorithm using Gibbs Sampling for Inference at E stage
     MaxIter = 25;
+    histLogLike = cell(MaxIter,1);
+
     MaxSubIter = 10;%20;
     LogLike_List = [];
     [LogLike, LogLike1, LogLike2, LogLike3] = loglike_LFN(W,F,D,Ts,G,params,hyper);
@@ -82,6 +90,8 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
 
     Gp_feature = zeros(N,N);
     for iter = 1:MaxIter
+        histLogLike{iter} = [];
+
         % E stage
         for subiter = 1:MaxSubIter
             % Left part (T):  Topic Model
@@ -142,17 +152,14 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
 
             % Check convergence
             [LogLike_new, loglike_new1, loglike_new2, loglike_new3] = loglike_LFN(W,F,D,Ts,G,params,hyper);
-
-            if(abs(LogLike_new-LogLike) < thres )
-                break;
-            end
+            histLogLike{iter} = [histLogLike{iter}; LogLike_new, loglike_new1, loglike_new2, loglike_new3];
             fprintf('SubIter # %d\n',subiter);
             disp(['SubIter # ' num2str(subiter) '-> L: ' num2str(floor(LogLike_new)) ' L1: ' num2str(floor(loglike_new1)) ' L2: ' num2str(floor(loglike_new2)) ' L3: ' num2str(loglike_new3)]);
+            if(abs(LogLike_new-LogLike)/abs(LogLike_new) < thres )
+                break;
+            end
             LogLike = LogLike_new;
-
         end
-
-
     
         % Update parameters
         Tw_count = Tw_count*0;
@@ -178,8 +185,9 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
         process.L(iter,3) = loglike_new2;
         process.L(iter,4) = loglike_new3;
 
-        matname = sprintf('N30_iter%d.mat',iter);
-        save(matname, 'params','hyper','process');
+        matname = [nameprefix num2str(iter) '.mat'];
+%         matname = sprintf('N30_iter%d.mat',iter);
+        save(matname, 'params','hyper','process', 'histLogLike');
     end
     save('LearnProcess.mat','process');
 end
