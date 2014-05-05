@@ -29,7 +29,7 @@ function [ params_new ] = update_params_LFN (F,D, params, Tp_count, Tw_count, G_
     denom_B = denom_B+1e-32;
     B = numer_B./ denom_B;
     if(isnan(sum(B(:))))
-        keyboard
+        %keyboard
     end
     % 3. update Beta (left part)
     % Tw_count: KxV matrix

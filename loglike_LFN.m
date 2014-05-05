@@ -21,17 +21,21 @@ for p = 1:N
     % topics
     C = numel(W{p});
     for c= 1:C
-        Tpc = T{p}(c);
+        Tpc = T(c,p);%T{p}(c);
         Wpc = W{p}(c); 
         loglike = loglike + log(Theta(p,Tpc))+ log(Beta(Tpc,Wpc));
         loglike1 = loglike1 + log(Theta(p,Tpc))+ log(Beta(Tpc,Wpc));
+        if(isinf(loglike1))
+            %keyboard
+        end
     end
     % groups
 end
 
 Tavg = cell(N,1);
 for p=1:N
-    Tavg{p} = histc(T{p},[1:K])/sum(histc(T{p},[1:K]));
+    Tavg{p} = histc(T(:,p),[1:K])/sum(histc(T(:,p),[1:K]));
+    %Tavg{p} = histc(T{p},[1:K])/sum(histc(T{p},[1:K]));
     Tavg{p} = reshape(Tavg{p},[K,1]);
 end
 Gavg = cell(N,N);
@@ -69,7 +73,7 @@ for p=1:N
             loglike2 = loglike2 + Dpqm*log(f2a+1e-32) + (1-Dpqm)*log(1-f2a+1e-32);
             loglike2 = loglike2 + Dqpm*log(f2b+1e-32) + (1-Dqpm)*log(1-f2b+1e-32);
             if(isnan(loglike2))
-                keyboard
+                %keyboard
             end
         end
     end
@@ -85,4 +89,7 @@ for p=1:N
         
         loglike3 = loglike3 + 2*Fpq*log(f3+1e-32) + 2*(1-Fpq)*log(1-f3+1e-32);
     end
+%     if(isinf(loglike))
+%         keyboard
+%     end
 end

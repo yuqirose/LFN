@@ -43,7 +43,7 @@ prob = exp(prob-max(prob));
 prob = prob/sum(prob); 
 
     if(isnan(sum(prob)))
-        keyboard
+        %keyboard
     end
 end
 

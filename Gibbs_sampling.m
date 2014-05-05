@@ -1,10 +1,12 @@
 function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
 % GIBBS_SAMPLING : Gibbs sampling method for LFN model
 % Direct implementation of Gibb sampling
+
+
     thres = 1e-3;
     %% intialization
     % preparison
-    W = data.W; 
+    W = data.W;
     F = data.F;
     D = data.D;
 
@@ -13,6 +15,7 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
     V = hyper.V; % dictionary length
     M = hyper.M;
 
+    
     % randomly initialize the parameters
     Theta = ones(N, K)*(1/K);
     Theta_prime = ones(N, K)*(1/K);
@@ -32,18 +35,29 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
     % G: NxN cell array
     [ T, G] = Rnd_generateLFN(W, D, K,M);
     
-    Tp_count = zeros(N,K);
-    Tw_count = zeros(K,V);
-    G_count = zeros(N,N,K);
-
-    for p = 1:N
-        T_p = T{p};
-        C = numel(T_p); % total words
-        for c = 1:C
-            Tp_count(p,T_p(c)) = Tp_count(p,T_p(c))+1;
-            Wpc = W{p}(c);
-            Tw_count(T_p(c),Wpc) = Tw_count(T_p(c),Wpc) +1;
+    maxC = 0;
+    for i=1:N
+        if(maxC<length(W{i}))
+            maxC = length(W{i});
         end
+    end
+    Ws = zeros(maxC, N);
+    for i=1:N
+        Ws(1:length(W{i}), i) = W{i}';
+    end
+    Ts = Ws*0;
+    for i=1:30
+        Ts(1:length(T{i}),i) = T{i};
+    end
+    numToken = sum(Ws>0);
+
+    Tp_count = DataCount(Ts,N,K); % K x N matrix
+    Tw_count = zeros(K,V);
+    Tw_count = WordTopicCount(Ws, Ts, Tw_count);
+    
+    G_count = zeros(N,N,K);
+    
+    for p = 1:N
         for q = 1:N
             G_pq = G{p,q};
             for m = 1:M
@@ -56,17 +70,13 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
     MaxIter = 25;
     MaxSubIter = 10;%20;
     LogLike_List = [];
-    [LogLike, LogLike1, LogLike2, LogLike3] = loglike_LFN(W,F,D,T,G,params,hyper);
+    [LogLike, LogLike1, LogLike2, LogLike3] = loglike_LFN(W,F,D,Ts,G,params,hyper);
     disp(['Initialization-> L: ' num2str(floor(LogLike)) ' L1: ' num2str(floor(LogLike1)) ' L2: ' num2str(floor(LogLike2)) ' L3: ' num2str(LogLike3)]);
     
     process.InitParam = params;
     process.InitL = [LogLike, LogLike1, LogLike2, LogLike3];
-    Tpcount = cell(N,1);
-    Tp_weights = cell(N,1); % assistant variables, used to calc P(F|T,G)
     Gp_weights = cell(N,1); % assistant variables, used to calc P(F|T,G)
     for p=1:N
-        Tpcount{p} = Tp_count(p,:);
-        Tp_weights{p} = Tpcount{p}'/sum(Tpcount{p});
         Gp_weights{p} = bsxfun(@rdivide, squeeze(G_count(p,:,:)), sum(squeeze(G_count(p,:,:)),2));
     end
 
@@ -74,45 +84,29 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
     for iter = 1:MaxIter
         % E stage
         for subiter = 1:MaxSubIter
-            % Left part (T): Sampling Users' content
-            
-            % note 1. during sampling of Left part, the right part, G is
-            % unchanged, use Gp_weight as input to the User-sampler
-    
-            % before sampling latent topics
-            % calculate the Grouping feature 
-            % which is used a lot but does not change during T sampling
+            % Left part (T):  Topic Model
             for p=1:N
                 for q=p+1:N
                     Gp_feature(p,q) = Gp_weights{p}(q,:)*Gp_weights{q}(p,:)';
                     Gp_feature(q,p) = Gp_feature(p,q);
                 end
             end
-            
-            parfor p=1:N
-                [T{p}, Tpcount{p}] = ...
-                    sampleUser(p, W{p}, Tpcount{p}, T{p}, Tp_weights, Gp_feature, F, params, hyper);
-            end
+            [tp, tpcount] = GibbsTopicPosterior(Ws, Ts, numToken, Tp_count, Gp_feature, F, Tau, Theta', Beta);
+            % attention: the input Theta should be K x N matrix
 
-            % after sampling each user, update the Tp_weight
-            for p=1:N
-                Tp_count(p,:)=Tpcount{p};
-                Tp_weights{p} = Tpcount{p}'/sum(Tpcount{p});
-            end
-            
-            
-            % before sampling grouping nodes G
-            % calculate the topic feature 
-            % which is used a lot but does not change during G sampling 
-            Tp_features = zeros(N,N);
+            tp = tp+1; % from 0~(K-1) in c++ to 1~K in MATLAB
+            Ts = reshape(tp, [size(Ts,1), size(Ts,2)]);
+            Tp_count = reshape(tpcount, [size(Tp_count,1), size(Tp_count,2)]);
+            %fprintf('change in Ws: %d\n', sum(abs(sum(Ws>0)-numToken)));
+            %fprintf('change in Ts: %d\n', sum(abs(sum(Ts>0)-numToken)));
+            %fprintf('change in Tp: %d\n', sum(abs(sum(Tp_count)-numToken)));
             for p=1:N
                 for q=p+1:N
-                    Tp_features(p,q) = Tp_weights{p}'*Tp_weights{q};
+                    Tp_features(p,q) = Tp_count(:,p)'*Tp_count(:,q)/numToken(p)/numToken(q);
                     Tp_features(q,p) = Tp_features(p,q);
                 end
             end
-            
-            % Right part (G) : Sampling User-User communication
+            % Right part (G) : Group Model
             for p=1:N
                 for q = p+1:N
                     for m = 1:M
@@ -147,13 +141,15 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
             end
 
             % Check convergence
-            [LogLike_new, loglike_new1, loglike_new2, loglike_new3] = loglike_LFN(W,F,D,T,G,params,hyper);
+            [LogLike_new, loglike_new1, loglike_new2, loglike_new3] = loglike_LFN(W,F,D,Ts,G,params,hyper);
+
             if(abs(LogLike_new-LogLike) < thres )
                 break;
             end
             fprintf('SubIter # %d\n',subiter);
             disp(['SubIter # ' num2str(subiter) '-> L: ' num2str(floor(LogLike_new)) ' L1: ' num2str(floor(loglike_new1)) ' L2: ' num2str(floor(loglike_new2)) ' L3: ' num2str(loglike_new3)]);
             LogLike = LogLike_new;
+
         end
 
 
@@ -169,7 +165,10 @@ function [ T,G, params, LogLike_List] = Gibbs_sampling(data,  hyper )
             end
         end
         Tw_count(:,1:4)
-        params = update_params_LFN(F,D,params,Tp_count,Tw_count, G_count, G);
+        params = update_params_LFN(F,D,params,Tp_count',Tw_count, G_count, G);
+        Theta = params.Theta;
+        Beta = params.Beta;
+        % previously the Tp_count is a NxK matrix 
         fprintf('Iter # %d\n',iter );
         disp(num2str([LogLike_new loglike_new1 loglike_new2 loglike_new3]));
         LogLike_List = [LogLike_List , LogLike_new ];
@@ -187,7 +186,7 @@ end
 
 
 
-function [Tp, Tp_count] = sampleUser(p, Wp, Tp_count, Tp, Tp_weights, Gp_feature, F, params, hyper);
+function [Tp, Tp_count, time1, time2, time3] = sampleUser(p, Wp, Tp_count, Tp, Tp_weights, Gp_feature, F, params, hyper);
 % function [Tp, Tp_count] = sampleUser(p, Wp, Tp_count, Tp, Gp_count, F, params, hyper)
 % Wp: the content of user p
 % Tp: the topic of user p
@@ -196,20 +195,47 @@ function [Tp, Tp_count] = sampleUser(p, Wp, Tp_count, Tp, Tp_weights, Gp_feature
 % function [T, Tp_count] = sampleUser(W, p, Tp_count)
     wunic = unique(Wp);
     C = length(wunic);
+    time1 = 0;
+    time2 = 0;
+    time3 = 0;
     % C = numel(Wp); % total words
     for c = 1:C
         idx = find(Wp==wunic(c));
         idxc = idx(1);
 
         Tp_count(Tp(idxc)) = Tp_count(Tp(idxc)) - 1;
-        prob_T = topic_posterior(p, Wp(idxc), Tp_count, Tp_weights, Gp_feature, F, params, hyper);
+        [prob_T, time1unit, time2unit] = topic_posterior(p, Wp(idxc), Tp_count, Tp_weights, Gp_feature, F, params, hyper);
         Tp_count(Tp(idxc)) = Tp_count(Tp(idxc)) + 1;
-        
+        time1 = time1+time1unit;
+        time2 = time2+time2unit;
+
+        start = tic;
         for i=1:length(idx)
             Tp_count(Tp(idx(i))) = Tp_count(Tp(idx(i))) - 1;
             Tpc_new = find(mnrnd(1, prob_T)==1);
             Tp(idx(i)) = Tpc_new;
             Tp_count(Tpc_new) = Tp_count(Tpc_new)+1;
         end
+        time3 = time3+toc(start);
+    end
+end
+
+function Count = DataCount(data, N, C)
+    % data is N column matrix
+    Count = zeros(C,N);
+    for c=1:C
+        Count(c,:) = sum(data==c);
+    end
+end
+
+function Count = WordTopicCount(Ws, Ts, Count)
+    % Count: K X V matrix
+    Count = Count*0;
+    Ws = Ws(:);
+    Ts = Ts(:);
+    Ts = Ts(Ws>0);
+    Ws = Ws(Ws>0);
+    for i=1:length(Ts)
+        Count(Ts(i), Ws(i)) = Count(Ts(i), Ws(i))+1;
     end
 end
