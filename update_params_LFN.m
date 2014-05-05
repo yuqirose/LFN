@@ -42,10 +42,18 @@ function [ params_new ] = update_params_LFN (F,D, params, Tp_count, Tw_count, G_
     Tp_weight = bsxfun(@rdivide, Tp_count, sum(Tp_count,2));
     G_weight = bsxfun(@rdivide, G_count, sum(G_count,3));
 
+    feature = cell(N,N);
+    for p=1:N
+        for q=p+1:N
+            feature{p,q} = [Tp_weight(p,:)*Tp_weight(q,:)'; squeeze(G_weight(p,q,:))'*squeeze(G_weight(q,p,:)); 1];
+            feature{q,p} = feature{p,q};
+        end
+    end
     
+
     Tau = params.Tau;
     lambda = 0.001;
-    [Tau, negL] = minimize(Tau, @calcFTGTau, 200, Tp_count, G_count, F, lambda);
+    [Tau, negL] = minimize(Tau, @calcFTGTau, 100, feature, F, lambda);
     Tau
      
     % 5. update Theta_prime
@@ -81,20 +89,9 @@ function [ params_new ] = update_params_LFN (F,D, params, Tp_count, Tw_count, G_
 
 end
 
-function [value, grad] = calcFTGTau(Tau, Tp_count, G_count, F, lambda)
-    Tp_weight = bsxfun(@rdivide, Tp_count, sum(Tp_count,2));
-    G_weight = bsxfun(@rdivide, G_count, sum(G_count,3));
-    N = size(G_weight,1);
+function [value, grad] = calcFTGTau(Tau, feature, F, lambda)
+    N = size(F,1);
     K = length(Tau);
-    
-    % calculate the features from inner product of vectors
-    feature = cell(N,N);
-    for p=1:N
-        for q=p+1:N
-            feature{p,q} = [Tp_weight(p,:)*Tp_weight(q,:)'; squeeze(G_weight(p,q,:))'*squeeze(G_weight(q,p,:)); 1];
-            feature{q,p} = feature{p,q};
-        end
-    end
     
     % 4.1 do inference
     pred = zeros(N,N);
