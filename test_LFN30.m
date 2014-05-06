@@ -1,9 +1,9 @@
 % load the training data set:
 
-names = {'Data/small_N=30/N=30-2010-09--2010-12.mat';
-'Data/small_N=30/N=30-2011-05--2011-08.mat';
-'Data/small_N=30/N=30-2012-01--2012-04.mat';
-'Data/small_N=30/N=30-2012-09--2012-12.mat';};
+names = {'Data/small_N=30/N=30-2010-09--2010-12.mat';};
+% 'Data/small_N=30/N=30-2011-05--2011-08.mat';
+% 'Data/small_N=30/N=30-2012-01--2012-04.mat';
+% 'Data/small_N=30/N=30-2012-09--2012-12.mat';};
 
 %{
 'Data/small_N=30/N=30-2011-01--2011-04.mat';
@@ -41,13 +41,13 @@ end
 
 Fname = 'Data/small_N=30/F_N=30.txt';
 data.F = load(Fname);
-keyboard
+% keyboard
     
 V = 0;
 for p=1:N
     V = max(V, max(data.W{p}));
 end
-keyboard
+% keyboard
 hyper.K = 5;
 hyper.N = N;
 hyper.V = V;

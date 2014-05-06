@@ -38,3 +38,11 @@ F = load('F_N=102.txt');
 D = load('D_N=102.txt');
 D = D(1:101,1:101);
 save('toy_N=102.mat','W','F','D');
+
+
+%%
+N = 106;
+D_all = zeros(N,N);
+D_all = D0+D1+D2+D3+D4+D5+D6+D7;
+total = sum(sum(D_all));
+    

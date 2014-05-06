@@ -21,10 +21,7 @@ per_ATM = load(fname);
 per_ATM = per_ATM.pers;
 disp(mean(per_ATM));
 
- 
- 
-% hold all;
-% plot(pers,'r');
-% plot(pers_lda,'b');
-% 
-% legend('ATM','LDA');
+ %%
+hold all;
+plot(diffGroup,'r');
+plot(diffTopic,'b');

@@ -19,7 +19,7 @@ tic
 times = ['2010-09--2010-12';'2011-01--2011-04';'2011-05--2011-08';'2011-09--2011-12';'2012-01--2012-04'...
      ;'2012-05--2012-08';'2012-09--2012-12';'2013-01--2013-04'];
 pers = [];
-for t = 1: size(times,1)-1
+for t = 5: 7
     Train_time = times(t,:);
     Test_time =  times(t,:);
     disp(Train_time);
@@ -30,9 +30,11 @@ for t = 1: size(times,1)-1
 %     load(strcat('./Result/',Train_time, '_N=',N,'_LDA.mat'));
     toc
     
-    [perplexity, theta, phi ]  =  eval_perplexity(N, Train_time, Test_time, T, WP,Z);
-    pers = [pers, perplexity];
-    save(strcat('./Result/',Train_time, '_N=',N,'_LDA.mat'),'WP','AT','Z','X','perplexity','theta','phi');
+    [per, theta, phi ]  =  eval_perplexity(N, Train_time, Test_time, T, WP,Z);
+    disp(per);
+    pers = [pers, per];
+   
+%     save(strcat('./Result/',Train_time, '_N=',N,'_LDA.mat'),'WP','AT','Z','X','perplexity','theta','phi');
 end
 
 
