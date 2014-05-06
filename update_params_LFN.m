@@ -42,18 +42,26 @@ function [ params_new ] = update_params_LFN (F,D, params, Tp_count, Tw_count, G_
     Tp_weight = bsxfun(@rdivide, Tp_count, sum(Tp_count,2));
     G_weight = bsxfun(@rdivide, G_count, sum(G_count,3));
 
-    feature = cell(N,N);
+    %feature = cell(N,N);
+    feature1 = zeros(N,N);
+    feature2 = zeros(N,N);
+    feature3 = ones(N,N);
     for p=1:N
         for q=p+1:N
-            feature{p,q} = [Tp_weight(p,:)*Tp_weight(q,:)'; squeeze(G_weight(p,q,:))'*squeeze(G_weight(q,p,:)); 1];
-            feature{q,p} = feature{p,q};
+            feature1(p,q) = Tp_weight(p,:)*Tp_weight(q,:)';
+            feature2(p,q) = squeeze(G_weight(p,q,:))'*squeeze(G_weight(q,p,:));
+            feature3(p,q) = 1;
+            %feature{p,q} = [Tp_weight(p,:)*Tp_weight(q,:)'; squeeze(G_weight(p,q,:))'*squeeze(G_weight(q,p,:)); 1];
+            %feature{q,p} = feature{p,q};
         end
     end
-    
+    feature1 = feature1+feature1';
+    feature2 = feature2+feature2';
+    feature3 = feature3+feature3';
 
     Tau = params.Tau;
     lambda = 0.001;
-    [Tau, negL] = minimize(Tau, @calcFTGTau, 100, feature, F, lambda);
+    [Tau, negL] = minimize(Tau, @calcFTGTau, 100, feature1, feature2, feature3, F, lambda);
     Tau
      
     % 5. update Theta_prime
@@ -89,28 +97,35 @@ function [ params_new ] = update_params_LFN (F,D, params, Tp_count, Tw_count, G_
 
 end
 
-function [value, grad] = calcFTGTau(Tau, feature, F, lambda)
+function [value, grad] = calcFTGTau(Tau, feature1, feature2, feature3, F, lambda)
     N = size(F,1);
     K = length(Tau);
     
     % 4.1 do inference
     pred = zeros(N,N);
-    for p=1:N
-        for q=p+1:N
-            pred(p,q) = 1/(1+exp(-Tau'*feature{p,q}));
-%            pred(q,p) = pred(q,p);
-        end
-    end
+    pred= 1./(1+exp(-Tau(1)*feature1-Tau(2)*feature2-Tau(3)*feature3));
+
+    %for p=1:N
+    %    for q=p+1:N
+    %        pred(p,q) = 1/(1+exp(-Tau'*feature{p,q}));
+%   %         pred(q,p) = pred(q,p);
+    %    end
+    %end
     
     % 4.2 calculate the gradient
     grad = zeros(K,1);
+    grad(1) = sum(sum((F-pred).*feature1));
+    grad(2) = sum(sum((F-pred).*feature2));
+    grad(3) = sum(sum((F-pred).*feature3));
+    %{
     for p=1:N
         for q=p+1:N
             grad = grad + (F(p,q)-pred(p,q))*feature{p,q};
 %            grad = grad + (F(q,p)-pred(q,p))*feature{q,p};
         end
     end
-    
+    %}
+
     % 4.3 calculate the value
     value = 0;
     for p=1:N
